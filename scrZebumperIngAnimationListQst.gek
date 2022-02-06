@@ -645,26 +645,26 @@ BEGIN gameMode
 			attachModel playerRef 3 $sPathObjAcc
 		endif
 
-		; ' Inserted code to handle the second accessory
-		; if eval iHandAcc2 > 0 && qstZebumperIngMCM.bDisableAcc == 0
-			; if iHandAcc2 == 1
-				; insertNode playerRef 3 "Bip01 R Hand|IngestibleAcc2"
-			; elseif iHandAcc2 == 2
-				; insertNode playerRef 3 "Bip01 L Hand|IngestibleAcc2"
-			; endif
-			; if iTimerObjShowAcc2 > 0
-				; playerRef.setNifBlockFlag "IngestibleAcc2" 0 1 2 ; HIDE
-				; set fTimer to (( iTimerObjShowAcc2 / 10 ) * getGlobalTimeMultiplier )
-				; callAfterSeconds fTimer ({} => playerRef.setNifBlockFlag "IngestibleAcc2" 0 0 2) ; show
-			; endif
+		; Inserted code to handle the second accessory
+		if eval iHandAcc2 > 0 && qstZebumperIngMCM.bDisableAcc == 0
+			if iHandAcc2 == 1
+				insertNode playerRef 3 "Bip01 R Hand|IngestibleAcc2"
+			elseif iHandAcc2 == 2
+				insertNode playerRef 3 "Bip01 L Hand|IngestibleAcc2"
+			endif
+			if iTimerObjShowAcc2 > 0
+				playerRef.setNifBlockFlag "IngestibleAcc2" 0 1 2 ; HIDE
+				set fTimer to (( iTimerObjShowAcc2 / 10 ) * getGlobalTimeMultiplier )
+				callAfterSeconds fTimer ({} => playerRef.setNifBlockFlag "IngestibleAcc2" 0 0 2) ; show
+			endif
 
-			; if iTimerObjHideAcc2 > 0
-				; set fTimer to (( iTimerObjHideAcc2 / 10 ) * getGlobalTimeMultiplier )
-				; callAfterSeconds fTimer ({} => playerRef.setNifBlockFlag "IngestibleAcc2" 0 1 2) ; hide
-			; endif
+			if iTimerObjHideAcc2 > 0
+				set fTimer to (( iTimerObjHideAcc2 / 10 ) * getGlobalTimeMultiplier )
+				callAfterSeconds fTimer ({} => playerRef.setNifBlockFlag "IngestibleAcc2" 0 1 2) ; hide
+			endif
 
-			; attachModel playerRef 3 $sPathObjAcc2
-		; endif
+			attachModel playerRef 3 $sPathObjAcc2
+		endif
 
 		set fStep to 3.3
 
