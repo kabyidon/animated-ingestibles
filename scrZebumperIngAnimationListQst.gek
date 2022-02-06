@@ -652,6 +652,14 @@ BEGIN gameMode
 			elseif iHandAcc2 == 2
 				insertNode playerRef 3 "Bip01 L Hand|IngestibleAcc2"
 			endif
+			; +z is away from camera 
+			; -y is closer to hand horizontal?
+			; use WaterCap as reference. Rotation is set to 0 0 0 in NifSkope
+			; You can run the below commands in game while it is paused, which is the most convenient way of adjusting the translation, rotation, and scale.
+			playerRef.setNifBlockTranslation "IngestibleAcc2" 10 7 0.25
+			playerRef.setNifBlockRotation "IngestibleAcc2" 230 10 0 
+			playerRef.setNifBlockScale "IngestibleAcc2" 1
+
 			if iTimerObjShowAcc2 > 0
 				playerRef.setNifBlockFlag "IngestibleAcc2" 0 1 2 ; HIDE
 				set fTimer to (( iTimerObjShowAcc2 / 10 ) * getGlobalTimeMultiplier )
