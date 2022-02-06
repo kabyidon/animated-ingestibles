@@ -1,0 +1,1160 @@
+scn scrZebumperIngMCM
+short iMaster
+short iMouseover
+short iOption
+short iTemp
+float fTemp
+float fValue
+reference rList
+int iSubMenu
+
+; TECHNIQUE
+short bFoodDrinkEnabled
+int iModIndex
+int iTimeScaleBase
+short bFirstLaunch		; permet de régler par défaut
+
+short bDontCheckIfPlayer
+float fJIPVersion
+float fxNVSEVersion
+
+; GÉNÉRAL
+int iAnimRowUnique		; (0=rien, 1=une seule anim dope+nourr+boisson, 2=une seule anim totale)
+int iAnimRowFood
+int iAnimRowChems
+int iAnimRowMiscs
+int iNoAnimKeyMCM
+int iExcludeControlMCM
+int iNoAnimKey
+int iExcludeControl
+int iCancelControlMCM
+int iCancelControl
+short bWriteINICustom
+int iCancelPenalty		; 0 = désactivé, 1 = combat, 2 = hors combat, 3 = tout
+short bDebug
+short bEmptyList
+int iSounds
+short bNoVanillaSounds
+short bHideCrosshair
+short iWildWastelandTweaks
+short bDisableAcc
+int iFasterAndFurious
+float fFasterFactor
+short bDisableULGourmandTweaks
+
+int iMaxAnim
+
+short bWorkForChems
+
+short bAutoLoadSave
+
+short bUseJohnny
+int iLoadOrSave	; 0 = cancel
+
+; wild surprises
+; 0 = undiscovered
+; 1 = discovered and ON
+; 2 = discovered and OFF
+int iWildHumanGore
+int iWildBaldMen
+
+; NOURRITURE ET BOISSON
+short bWork1POV
+short bWork3POV
+short bWorkCombat
+short bEatSitBonus
+int iForcePOV		; (0=rien, 1=1e personne, 2=3e personne, 3=smart)
+int iTimeScaleVar
+short bLongerAnimations
+int iCanteen13Animation
+
+short bWorkForType0
+short bWorkForType1
+short bWorkForType2
+short bWorkForType3
+short bWorkForType4
+short bWorkForType5
+short bWorkForType6
+short bWorkForType7
+short bWorkForType8
+; short bWorkForType9
+; short bWorkForType10
+
+; DOPE
+short bWork1POVChems
+short bWork3POVChems
+short bWorkCombatChems
+short bWorkForType11
+short bWorkForType12
+short bWorkForType13
+short bWorkForType14
+short bWorkForType15
+short bWorkForType16
+short bWorkForType17
+short bWorkForType18
+short bWorkForType19
+short bWorkForType20
+short bWorkForType21
+short bWorkForType22
+
+short bPAAutoInject
+int iForcePOVChems
+int iMK2Managment
+
+; MISCS
+short bWorkForMiscs
+short bWork1POVMiscs
+short bWork3POVMiscs
+short bWorkCombatMiscs
+int iForcePOVMiscs
+short bWorkForType25	; magazines
+short bWorkForType26	; skill books
+short bWorkForType27	; generic books
+
+short bLongAnimationsForBooks
+
+int iCount
+
+ref rItemRef
+
+begin GameMode
+
+	if getGameRestarted
+
+		set fxNVSEVersion to 6.24
+		set fJIPVersion to 56.40
+
+		; CROSSMODS
+		set iModIndex to getSelfModIndex
+		setINIFloat "ModList:bAnimatedIngestibles" 1 "zebumper\zebumper's cross mods config.ini"
+		setINIFloat "Animated Ingestibles:iModIndex" iModIndex "zebumper\zebumper's cross mods config.ini"
+
+		if isModLoaded "The Mod Configuration Menu.esp"
+			set iMaster to GetModIndex "The Mod Configuration Menu.esp"
+			set rList to BuildRef iMaster 2790
+			ListAddForm rList miscZebumperIngMCM
+;		else
+;			messageBoxEx "Attention : le mod 'Animated Ingestibles' requiert le Menu de Configuration des Mods (MCM)."
+		endif
+
+		; check xnvse & JIP
+		set fValue to 0
+		set fTemp to 0
+
+		if getNVSEVersionFull < fxNVSEVersion
+			set fValue to 1
+		endif
+		if getPluginVersion "JIP NVSE Plugin" < fJIPVersion
+			set fTemp to 1
+		endif
+
+		if eval fValue == 1 && fTemp == 0		; xnvse not valid but JIP is ok
+			messageBoxEx "Warning: your version of xNVSE is older than the one used when creating the 'Animated Ingestibles' mod (xNVSE version %.2f). The mod may not work properly." fxNVSEVersion
+		elseif eval fValue == 0 && fTemp == 1	; xnvse valid but JIP not
+			messageBoxEx "Warning: your version of JIP LN NVSE is older than the one used when creating the 'Animated Ingestibles' mod (JIP version %.2f). The mod may not work properly." fJIPVersion
+		elseif eval fValue == 1 && fTemp == 1	; xnvse and JIP arent valid
+			messageBoxEx "Warning: your version of xNVSE and JIP LN NVSE are both older those used when creating the 'Animated Ingestibles' mod (xNVSE version %.2f, JIP version %.2f). The mod may not work properly." fxNVSEVersion, fJIPVersion
+		endif
+		set fValue to 0
+		set fTemp to 0
+
+	endif
+
+	if getGameLoaded
+
+		set fFasterFactor to 1.5	; <- cannot be an option for the player
+		set bDontCheckIfPlayer to 0
+
+		set bDebug to 0
+		getLoadedType listZebumperIngAll 47 -1 0	; <- tous les consommables de tous les mods
+		getLoadedType listZebumperIngAllBooks 25 -1 0	; <- tous les livres de compétence de tous les mods
+
+;		set iTemp to listgetCount listZebumperIngAll 
+;		printD $iTemp + " objets dans la liste"
+
+		set iMaxAnim to 32	; max animation in a row
+
+		listClear listZebumperIngAnimationRow
+
+		; MK2 Suit auto inject management
+		if isModLoaded "OldWorldBlues.esm"
+			set iModIndex to getModIndex "OldWorldBlues.esm"
+			set rItemRef to buildRef iModIndex 49455 ; mk2 suit
+			if getObjectType rItemRef == 24 && isRefInList listZebumperIngMK2Suit rItemRef == -1
+				listAddForm listZebumperIngMK2Suit rItemRef
+;				player.additem rItemRef 1 ; for testing
+			endif
+		endif
+
+		set bEmptyList to 0
+		setOnUseAidItemEventHandler scrZebumperIngOnUseAidItem 1 listZebumperIngAll
+
+		set bAutoLoadSave to getINIFloat "AUTOLOADSAVE:bAutoLoadSave" "zebumper\AnimatedIngestiblesSettings.ini"
+		if bAutoLoadSave == 1
+			set iTemp to 1
+			call scrZebumperIngMCMLoadOrSaveCall {iTemp}
+			scriptWait 1
+		else
+			setINIFloat "AUTOLOADSAVE:bAutoLoadSave" 0 "zebumper\AnimatedIngestiblesSettings.ini"
+		endif
+
+		; ///// DEFAULT
+		if bFirstLaunch == 0	; first launch
+			set bFirstLaunch to 1
+			set iSubMenu to 0
+			call scrZebumperIngMCMDefaultCall {iSubMenu}
+			scriptWait 1
+		endif
+
+		call scrZebumperIngMCMChangesCall {}
+
+	endif
+
+end
+
+begin MenuMode 1013
+	if IsModLoaded "The Mod Configuration Menu.esp"
+	else
+		Return
+	endif
+
+	if GetUIFloat "StartMenu/MCM/_ActiveMod" == getSelfModIndex
+		set iOption to GetUIFloat "StartMenu/MCM/_ActiveOption"
+		set fValue to GetUIFloat "StartMenu/MCM/_Value"
+
+		if GetUIFloat "StartMenu/MCM/*:5/SubMenu1/_enable" == 0						; GENERAL
+			SetUIFloat "StartMenu/MCM/_ActiveSubMenu" 1
+
+			SetUIFloat "StartMenu/MCM/*:5/SubMenu1/_enable" 1
+			SetUIString "StartMenu/MCM/*:5/SubMenu1/text/string" "Global"
+			SetUIString "StartMenu/MCM/*:8/SubTitle1/string" "Global Settings"
+
+			SetUIFloat "StartMenu/MCM/*:5/SubMenu2/_enable" 1						; DRINKS FOOD
+			SetUIString "StartMenu/MCM/*:5/SubMenu2/text/string" "Food & Drinks"
+			SetUIString "StartMenu/MCM/*:8/SubTitle2/string" "Animated Food & Drinks"
+
+			SetUIFloat "StartMenu/MCM/*:5/SubMenu3/_enable" 1						; CHEMS
+			SetUIString "StartMenu/MCM/*:5/SubMenu3/text/string" "Chems"
+			SetUIString "StartMenu/MCM/*:8/SubTitle3/string" "Animated Chems"
+
+			SetUIFloat "StartMenu/MCM/*:5/SubMenu4/_enable" 1						; MISCS
+			SetUIString "StartMenu/MCM/*:5/SubMenu4/text/string" "Others"
+			SetUIString "StartMenu/MCM/*:8/SubTitle4/string" "Others Items"
+
+;			SetUIFloat "StartMenu/MCM/*:5/SubMenu5/_enable" iWildWastelandTweaks	; WILD
+;			SetUIString "StartMenu/MCM/*:5/SubMenu5/text/string" "Wild Wastelands"
+;			SetUIString "StartMenu/MCM/*:8/SubTitle5/string" "Surprises des Terres dévastées"
+		endif
+
+		set iSubMenu to GetUIFloat "StartMenu/MCM/_ActiveSubMenu"
+		if GetUIFloat "StartMenu/MCM/_Reset"			;1 - RESET
+			SetUIFloat "StartMenu/MCM/_Reset" 0
+			SetUIFloat "StartMenu/MCM/*:1/_columns" 2
+
+			; GENERAL
+			if iSubMenu == 1
+;==================================== GAUCHE =====================================
+				SetUIFloat "StartMenu/MCM/*:1/*:1/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:1/_title" "== GAMEPLAY =="
+				SetUIFloat "StartMenu/MCM/*:1/*:1/_RGB" 065205105
+				SetUIFloat "StartMenu/MCM/*:1/*:1/_type" 0
+
+				SetUIFloat "StartMenu/MCM/*:1/*:3/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:3/_title" "Unique Animation"
+				SetUIFloat "StartMenu/MCM/*:1/*:3/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:3/_value" iAnimRowUnique
+
+				SetUIFloat "StartMenu/MCM/*:1/*:5/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:5/_title" "Cancel penalties"
+				SetUIFloat "StartMenu/MCM/*:1/*:5/_type" 1
+				if iCancelPenalty == 0
+					SetUIString "StartMenu/MCM/*:1/*:5/value/*:1/string" "None"
+				elseif iCancelPenalty == 1
+					SetUIString "StartMenu/MCM/*:1/*:5/value/*:1/string" "In combat"
+				elseif iCancelPenalty == 2
+					SetUIString "StartMenu/MCM/*:1/*:5/value/*:1/string" "Out of combat"
+				elseif iCancelPenalty == 3
+					SetUIString "StartMenu/MCM/*:1/*:5/value/*:1/string" "Full"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:7/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:7/_title" "Faster and Furious"
+				SetUIFloat "StartMenu/MCM/*:1/*:7/_type" 2
+				if iFasterAndFurious == 0
+					SetUIFloat "StartMenu/MCM/*:1/*:7/_suffix" 1
+					SetUIString "StartMenu/MCM/*:1/*:7/_suffixText" "FF"
+				else
+					SetUIFloat "StartMenu/MCM/*:1/*:7/_suffix" 1
+					SetUIString "StartMenu/MCM/*:1/*:7/_suffixText" " pts"
+				endif
+				SetUIFloat "StartMenu/MCM/*:1/*:7/_value" iFasterAndFurious
+
+				SetUIFloat "StartMenu/MCM/*:1/*:9/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:9/_title" "== INTEGRATION =="
+				SetUIFloat "StartMenu/MCM/*:1/*:9/_RGB" 065205105
+				SetUIFloat "StartMenu/MCM/*:1/*:9/_type" 0
+
+;				SetUIFloat "StartMenu/MCM/*:1/*:11/_enable" 1
+;				SetUIString "StartMenu/MCM/*:1/*:11/_title" "Mod's Sounds"
+;				SetUIFloat "StartMenu/MCM/*:1/*:11/_type" 5
+;				SetUIFloat "StartMenu/MCM/*:1/*:11/_value" bSounds
+
+				SetUIFloat "StartMenu/MCM/*:1/*:11/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:11/_title" "Sounds"
+				SetUIFloat "StartMenu/MCM/*:1/*:11/_type" 1
+				if iSounds == 0
+					SetUIString "StartMenu/MCM/*:1/*:11/value/*:1/string" "None"
+				elseif iSounds == 1
+					SetUIString "StartMenu/MCM/*:1/*:11/value/*:1/string" "All"
+				elseif iSounds == 2
+					SetUIString "StartMenu/MCM/*:1/*:11/value/*:1/string" "1st POV"
+;				elseif iSounds == 3
+;					SetUIString "StartMenu/MCM/*:1/*:11/value/*:1/string" "3ème pers."
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:13/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:13/_title" "Change Vanilla Sounds"
+				SetUIFloat "StartMenu/MCM/*:1/*:13/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:13/_value" bNoVanillaSounds
+
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:15/_title" "Hide Crosshair"
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_value" bHideCrosshair
+
+				SetUIFloat "StartMenu/MCM/*:1/*:17/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:17/_title" "Terres dévastées"
+				SetUIFloat "StartMenu/MCM/*:1/*:17/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:17/_value" iWildWastelandTweaks
+
+;				SetUIFloat "StartMenu/MCM/*:1/*:17/_enable" 1
+;				SetUIString "StartMenu/MCM/*:1/*:17/_title" "Terres dévastées"
+;				SetUIFloat "StartMenu/MCM/*:1/*:17/_type" 1
+;				SetUIFloat "StartMenu/MCM/*:1/*:17/_value" iWildWastelandTweaks
+;				if iWildWastelandTweaks == 0
+;					SetUIString "StartMenu/MCM/*:1/*:17/value/*:1/string" "OFF"
+;				elseif iWildWastelandTweaks == 1
+;					SetUIString "StartMenu/MCM/*:1/*:17/value/*:1/string" "ON"
+;				elseif iWildWastelandTweaks == 2
+;					SetUIString "StartMenu/MCM/*:1/*:17/value/*:1/string" "ON (1x)"
+;				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:19/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:19/_title" "Disable 'Frills'"
+				SetUIFloat "StartMenu/MCM/*:1/*:19/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:19/_value" bDisableAcc
+
+				SetUIFloat "StartMenu/MCM/*:1/*:25/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:25/_title" "Load/Save Settings"
+				SetUIFloat "StartMenu/MCM/*:1/*:25/_type" 1
+				if bAutoLoadSave == 0
+					SetUIString "StartMenu/MCM/*:1/*:25/value/*:1/string" "Manual"
+				else
+					SetUIString "StartMenu/MCM/*:1/*:25/value/*:1/string" "Auto"
+				endif
+
+				if getQuestRunning qstZebumperIngAnimationList
+					SetUIFloat "StartMenu/MCM/*:1/*:27/_enable" 1
+				else
+					SetUIFloat "StartMenu/MCM/*:1/*:27/_enable" 2
+				endif
+				SetUIString "StartMenu/MCM/*:1/*:27/_textOff" " "
+				SetUIString "StartMenu/MCM/*:1/*:27/_textOn" " "
+				SetUIString "StartMenu/MCM/*:1/*:27/_title" "Unlock Mod"
+				SetUIFloat "StartMenu/MCM/*:1/*:27/_type" 6
+				SetUIFloat "StartMenu/MCM/*:1/*:27/_value" iWildWastelandTweaks
+
+;==================================== DROITE =====================================
+				SetUIFloat "StartMenu/MCM/*:1/*:2/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:2/_title" "== CONTROLS =="
+				SetUIFloat "StartMenu/MCM/*:1/*:2/_RGB" 065205105
+				SetUIFloat "StartMenu/MCM/*:1/*:2/_type" 0
+
+				SetUIFloat "StartMenu/MCM/*:1/*:4/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:4/_title" "No-Anim Key"
+				SetUIFloat "StartMenu/MCM/*:1/*:4/_type" 1
+				if iNoAnimKeyMCM == 0
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "None"
+				elseif iNoAnimKeyMCM == 1
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "Sneak"
+				elseif iNoAnimKeyMCM == 2
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "Reload"
+				elseif iNoAnimKeyMCM == 3
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "Change ammo"
+				elseif iNoAnimKeyMCM == 4
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "POV"
+				elseif iNoAnimKeyMCM == 5
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "Grab"
+				elseif iNoAnimKeyMCM == 6
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "Wait"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:6/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:6/_title" "Exclude/Include Key"
+				SetUIFloat "StartMenu/MCM/*:1/*:6/_type" 1
+				if iExcludeControlMCM == 0
+					SetUIString "StartMenu/MCM/*:1/*:6/value/*:1/string" "None"
+				elseif iExcludeControlMCM == 1
+					SetUIString "StartMenu/MCM/*:1/*:6/value/*:1/string" "Sneak"
+				elseif iExcludeControlMCM == 2
+					SetUIString "StartMenu/MCM/*:1/*:6/value/*:1/string" "Reload"
+				elseif iExcludeControlMCM == 3
+					SetUIString "StartMenu/MCM/*:1/*:6/value/*:1/string" "Change ammo"
+				elseif iExcludeControlMCM == 4
+					SetUIString "StartMenu/MCM/*:1/*:6/value/*:1/string" "POV"
+				elseif iExcludeControlMCM == 5
+					SetUIString "StartMenu/MCM/*:1/*:6/value/*:1/string" "Grab"
+				elseif iExcludeControlMCM == 6
+					SetUIString "StartMenu/MCM/*:1/*:6/value/*:1/string" "Wait"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:8/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:8/_title" "Cancel Control"
+				SetUIFloat "StartMenu/MCM/*:1/*:8/_type" 1
+				if iCancelControlMCM == 0
+					SetUIString "StartMenu/MCM/*:1/*:8/value/*:1/string" "None"
+				elseif iCancelControlMCM == 1
+					SetUIString "StartMenu/MCM/*:1/*:8/value/*:1/string" "Grab"
+				elseif iCancelControlMCM == 2
+					SetUIString "StartMenu/MCM/*:1/*:8/value/*:1/string" "Attack"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:10/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:10/_title" "== COMPATIBILITY =="
+				SetUIFloat "StartMenu/MCM/*:1/*:10/_RGB" 065205105
+				SetUIFloat "StartMenu/MCM/*:1/*:10/_type" 0
+
+				SetUIFloat "StartMenu/MCM/*:1/*:12/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:12/_title" "Disable Gourmand tweaks"
+				SetUIFloat "StartMenu/MCM/*:1/*:12/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:12/_value" bDisableULGourmandTweaks
+
+				SetUIFloat "StartMenu/MCM/*:1/*:22/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:22/_title" "== TECHNICAL =="
+				SetUIFloat "StartMenu/MCM/*:1/*:22/_RGB" 065205105
+				SetUIFloat "StartMenu/MCM/*:1/*:22/_type" 0
+
+				SetUIFloat "StartMenu/MCM/*:1/*:24/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:24/_title" "Write in INI file"
+				SetUIFloat "StartMenu/MCM/*:1/*:24/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:24/_value" bWriteINICustom
+
+				if listGetCount listZebumperIngExclusions > 0
+					set iTemp to listGetCount listZebumperIngExclusions
+					SetUIFloat "StartMenu/MCM/*:1/*:26/_enable" 1
+					SetUIStringEX "StartMenu/MCM/*:1/*:26/value/*:1/string" "(%.0f)" iTemp
+				else
+					SetUIFloat "StartMenu/MCM/*:1/*:26/_enable" 2
+					SetUIString "StartMenu/MCM/*:1/*:26/value/*:1/string" "(empty)"
+				endif
+				SetUIString "StartMenu/MCM/*:1/*:26/_title" "Clear Exclusion List"
+				SetUIFloat "StartMenu/MCM/*:1/*:26/_type" 1	
+
+				SetUIFloat "StartMenu/MCM/*:1/*:28/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:28/_title" "Debug Mode"
+				SetUIFloat "StartMenu/MCM/*:1/*:28/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:28/_value" bDebug
+
+				SetUIFloat "StartMenu/MCM/*:1/*:30/_enable" 1
+				SetUIString "StartMenu/MCM/*:1/*:30/_textOff" " "
+				SetUIString "StartMenu/MCM/*:1/*:30/_textOn" " "
+				SetUIString "StartMenu/MCM/*:1/*:30/_title" "xNVSE & JIP Info."
+				SetUIFloat "StartMenu/MCM/*:1/*:30/_type" 6
+				SetUIFloat "StartMenu/MCM/*:1/*:30/_value" iWildWastelandTweaks
+
+			elseif iSubMenu == 2
+;==================================== GAUCHE =====================================
+				SetUIString "StartMenu/MCM/*:1/*:1/_title" "> FOOD AND DRINKS"
+				SetUIFloat "StartMenu/MCM/*:1/*:1/_value" bFoodDrinkEnabled
+
+				set iTemp to (( iAnimRowUnique + 1 ) * bFoodDrinkEnabled )
+				SetUIFloat "StartMenu/MCM/*:1/*:3/_enable" iTemp
+				if iAnimRowFood == 0
+					SetUIString "StartMenu/MCM/*:1/*:3/value/*:1/string" "None"
+				elseif iAnimRowFood == 1
+					SetUIString "StartMenu/MCM/*:1/*:3/value/*:1/string" "One/Type"
+				elseif iAnimRowFood == 2
+					SetUIString "StartMenu/MCM/*:1/*:3/value/*:1/string" "Only one"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:5/_enable" bFoodDrinkEnabled
+				SetUIFloat "StartMenu/MCM/*:1/*:5/_value" bWork1POV
+
+				SetUIFloat "StartMenu/MCM/*:1/*:7/_enable" bFoodDrinkEnabled
+				SetUIFloat "StartMenu/MCM/*:1/*:7/_value" bWork3POV
+
+				SetUIFloat "StartMenu/MCM/*:1/*:9/_enable" bFoodDrinkEnabled
+				if iForcePOV == 0
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "OFF"
+				elseif iForcePOV == 1
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "Forced 1st"
+				elseif iForcePOV == 2
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "Forced 3rd"
+				elseif iForcePOV == 3
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "3rd if seated"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:11/_enable" bFoodDrinkEnabled
+				SetUIFloat "StartMenu/MCM/*:1/*:11/_value" bWorkCombat
+
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:15/_title" "Seated Bonus"
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_value" bEatSitBonus
+
+				SetUIFloat "StartMenu/MCM/*:1/*:17/_enable" bFoodDrinkEnabled			
+				SetUIString "StartMenu/MCM/*:1/*:17/_title" "Longer Animation if seated"
+				SetUIFloat "StartMenu/MCM/*:1/*:17/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:17/_value" bLongerAnimations
+
+				SetUIFloat "StartMenu/MCM/*:1/*:19/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:19/_title" "Timescale variation"
+				SetUIFloat "StartMenu/MCM/*:1/*:19/_type" 2
+				if iTimeScaleVar == 0
+					SetUIFloat "StartMenu/MCM/*:1/*:19/_suffix" 1
+					SetUIString "StartMenu/MCM/*:1/*:19/_suffixText" "FF"
+				else
+					SetUIFloat "StartMenu/MCM/*:1/*:19/_suffix" 0
+				endif
+				SetUIFloat "StartMenu/MCM/*:1/*:19/_value" iTimeScaleVar
+
+				SetUIFloat "StartMenu/MCM/*:1/*:21/_enable" bFoodDrinkEnabled			
+				SetUIString "StartMenu/MCM/*:1/*:21/_title" "Vault 13 Canteen Animation"
+				SetUIFloat "StartMenu/MCM/*:1/*:21/_type" 1
+				if iCanteen13Animation == 0
+					SetUIString "StartMenu/MCM/*:1/*:21/value/*:1/string" "OFF"
+				elseif iCanteen13Animation == 1
+					SetUIString "StartMenu/MCM/*:1/*:21/value/*:1/string" "ON"
+				elseif iCanteen13Animation == 2
+					SetUIString "StartMenu/MCM/*:1/*:21/value/*:1/string" "Out of combat"
+				endif
+
+;==================================== DROITE =====================================
+				SetUIFloat "StartMenu/MCM/*:1/*:2/_enable" bFoodDrinkEnabled
+
+				SetUIFloat "StartMenu/MCM/*:1/*:4/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:4/_title" "0.Water"
+				SetUIFloat "StartMenu/MCM/*:1/*:4/_type" 1
+				if bWorkForType0 == 0
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "OFF"
+				elseif bWorkForType0 == 1
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "ON"
+				elseif bWorkForType0 == 2
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "Sitting only"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:6/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:6/_title" "1.Drinks"
+				SetUIFloat "StartMenu/MCM/*:1/*:6/_type" 1
+				if bWorkForType1 == 0
+					SetUIString "StartMenu/MCM/*:1/*:6/value/*:1/string" "OFF"
+				elseif bWorkForType1 == 1
+					SetUIString "StartMenu/MCM/*:1/*:6/value/*:1/string" "ON"
+				elseif bWorkForType1 == 2
+					SetUIString "StartMenu/MCM/*:1/*:6/value/*:1/string" "Sitting only"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:8/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:8/_title" "2.Alcohol"
+				SetUIFloat "StartMenu/MCM/*:1/*:8/_type" 1
+				if bWorkForType2 == 0
+					SetUIString "StartMenu/MCM/*:1/*:8/value/*:1/string" "OFF"
+				elseif bWorkForType2 == 1
+					SetUIString "StartMenu/MCM/*:1/*:8/value/*:1/string" "ON"
+				elseif bWorkForType2 == 2
+					SetUIString "StartMenu/MCM/*:1/*:8/value/*:1/string" "Sitting only"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:10/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:10/_title" "3.Cooked & Meats"
+				SetUIFloat "StartMenu/MCM/*:1/*:10/_type" 1
+				if bWorkForType3 == 0
+					SetUIString "StartMenu/MCM/*:1/*:10/value/*:1/string" "OFF"
+				elseif bWorkForType3 == 1
+					SetUIString "StartMenu/MCM/*:1/*:10/value/*:1/string" "ON"
+				elseif bWorkForType3 == 2
+					SetUIString "StartMenu/MCM/*:1/*:10/value/*:1/string" "Sitting only"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:12/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:12/_title" "4.Other Food"
+				SetUIFloat "StartMenu/MCM/*:1/*:12/_type" 1
+				if bWorkForType4 == 0
+					SetUIString "StartMenu/MCM/*:1/*:12/value/*:1/string" "OFF"
+				elseif bWorkForType4 == 1
+					SetUIString "StartMenu/MCM/*:1/*:12/value/*:1/string" "ON"
+				elseif bWorkForType4 == 2
+					SetUIString "StartMenu/MCM/*:1/*:12/value/*:1/string" "Sitting only"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:14/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:14/_title" "5.Junk Food"
+				SetUIFloat "StartMenu/MCM/*:1/*:14/_type" 1
+				if bWorkForType5 == 0
+					SetUIString "StartMenu/MCM/*:1/*:14/value/*:1/string" "OFF"
+				elseif bWorkForType5 == 1
+					SetUIString "StartMenu/MCM/*:1/*:14/value/*:1/string" "ON"
+				elseif bWorkForType5 == 2
+					SetUIString "StartMenu/MCM/*:1/*:14/value/*:1/string" "Sitting only"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:16/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:16/_title" "6.Type #6"
+				SetUIFloat "StartMenu/MCM/*:1/*:16/_type" 1
+				if bWorkForType6 == 0
+					SetUIString "StartMenu/MCM/*:1/*:16/value/*:1/string" "OFF"
+				elseif bWorkForType6 == 1
+					SetUIString "StartMenu/MCM/*:1/*:16/value/*:1/string" "ON"
+				elseif bWorkForType6 == 2
+					SetUIString "StartMenu/MCM/*:1/*:16/value/*:1/string" "Sitting only"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:18/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:18/_title" "7.Type #7"
+				SetUIFloat "StartMenu/MCM/*:1/*:18/_type" 1
+				if bWorkForType7 == 0
+					SetUIString "StartMenu/MCM/*:1/*:18/value/*:1/string" "OFF"
+				elseif bWorkForType7 == 1
+					SetUIString "StartMenu/MCM/*:1/*:18/value/*:1/string" "ON"
+				elseif bWorkForType7 == 2
+					SetUIString "StartMenu/MCM/*:1/*:18/value/*:1/string" "Sitting only"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:20/_enable" bFoodDrinkEnabled
+				SetUIString "StartMenu/MCM/*:1/*:20/_title" "8.Type #8"
+				SetUIFloat "StartMenu/MCM/*:1/*:20/_type" 1
+				if bWorkForType8 == 0
+					SetUIString "StartMenu/MCM/*:1/*:20/value/*:1/string" "OFF"
+				elseif bWorkForType8 == 1
+					SetUIString "StartMenu/MCM/*:1/*:20/value/*:1/string" "ON"
+				elseif bWorkForType8 == 2
+					SetUIString "StartMenu/MCM/*:1/*:20/value/*:1/string" "Sitting only"
+				endif
+
+			elseif iSubMenu == 3
+;==================================== GAUCHE =====================================
+				SetUIString "StartMenu/MCM/*:1/*:1/_title" "> CHEMS"
+				SetUIFloat "StartMenu/MCM/*:1/*:1/_value" bWorkForChems
+
+				set iTemp to (( iAnimRowUnique + 1) * bWorkForChems )
+				SetUIFloat "StartMenu/MCM/*:1/*:3/_enable" iTemp
+				if iAnimRowChems == 0
+					SetUIString "StartMenu/MCM/*:1/*:3/value/*:1/string" "None"
+				elseif iAnimRowChems == 1
+					SetUIString "StartMenu/MCM/*:1/*:3/value/*:1/string" "One/Type"
+				elseif iAnimRowChems == 2
+					SetUIString "StartMenu/MCM/*:1/*:3/value/*:1/string" "Only one"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:5/_enable" bWorkForChems
+				SetUIFloat "StartMenu/MCM/*:1/*:5/_value" bWork1POVChems
+
+				SetUIFloat "StartMenu/MCM/*:1/*:7/_enable" bWorkForChems
+				SetUIFloat "StartMenu/MCM/*:1/*:7/_value" bWork3POVChems
+
+				SetUIFloat "StartMenu/MCM/*:1/*:9/_enable" bWorkForChems
+				if iForcePOVChems == 0
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "OFF"
+				elseif iForcePOVChems == 1
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "Forced 1st"
+				elseif iForcePOVChems == 2
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "Forced 3rd"
+				elseif iForcePOVChems == 3
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "3rd if seated"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:11/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:11/_title" "Work in Combat"
+				SetUIFloat "StartMenu/MCM/*:1/*:11/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:11/_value" bWorkCombatChems
+
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:15/_title" "No Animation in PA"
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_value" bPAAutoInject
+
+				SetUIFloat "StartMenu/MCM/*:1/*:17/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:17/_title" "MKII Management"
+				SetUIFloat "StartMenu/MCM/*:1/*:17/_type" 1
+
+				if eval fileExists "zebumper\Animated Ingestibles - Perfect MKII.ImHere" == 0 && iMK2Managment > 1
+					set iMK2Managment to 1
+				elseif eval fileExists "zebumper\Animated Ingestibles - Perfect MKII.ImHere" >= 1 && iMK2Managment == 0 
+					set iMK2Managment to 3
+				endif
+				if iMK2Managment == 0
+					SetUIString "StartMenu/MCM/*:1/*:17/value/*:1/string" "OFF"
+				elseif iMK2Managment == 1
+					SetUIString "StartMenu/MCM/*:1/*:17/value/*:1/string" "Compatible"
+				elseif iMK2Managment == 2
+					SetUIString "StartMenu/MCM/*:1/*:17/value/*:1/string" "Perfect"
+				elseif iMK2Managment == 3
+					SetUIString "StartMenu/MCM/*:1/*:17/value/*:1/string" "YUP"
+				endif
+
+;==================================== DROITE =====================================
+				SetUIFloat "StartMenu/MCM/*:1/*:2/_enable" bWorkForChems
+
+				SetUIFloat "StartMenu/MCM/*:1/*:4/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:4/_title" "11.Stimpaks"
+				SetUIFloat "StartMenu/MCM/*:1/*:4/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:4/_value" bWorkForType11
+
+				SetUIFloat "StartMenu/MCM/*:1/*:6/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:6/_title" "12.Pills"
+				SetUIFloat "StartMenu/MCM/*:1/*:6/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:6/_value" bWorkForType12
+
+				SetUIFloat "StartMenu/MCM/*:1/*:8/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:8/_title" "13.Jet"
+				SetUIFloat "StartMenu/MCM/*:1/*:8/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:8/_value" bWorkForType13
+
+				SetUIFloat "StartMenu/MCM/*:1/*:10/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:10/_title" "14.Psycho"
+				SetUIFloat "StartMenu/MCM/*:1/*:10/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:10/_value" bWorkForType14
+
+				SetUIFloat "StartMenu/MCM/*:1/*:12/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:12/_title" "15.Rebound"
+				SetUIFloat "StartMenu/MCM/*:1/*:12/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:12/_value" bWorkForType15
+
+				SetUIFloat "StartMenu/MCM/*:1/*:14/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:14/_title" "16.Steady"
+				SetUIFloat "StartMenu/MCM/*:1/*:14/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:14/_value" bWorkForType16
+
+				SetUIFloat "StartMenu/MCM/*:1/*:16/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:16/_title" "17.Turbo"
+				SetUIFloat "StartMenu/MCM/*:1/*:16/_type" 1
+				if bWorkForType17 == 0
+					SetUIString "StartMenu/MCM/*:1/*:16/value/*:1/string" "OFF"
+				elseif bWorkForType17 == 1
+					SetUIString "StartMenu/MCM/*:1/*:16/value/*:1/string" "ON"
+				elseif bWorkForType17 == 2
+					SetUIString "StartMenu/MCM/*:1/*:16/value/*:1/string" "Delay"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:18/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:18/_title" "18.Hydra"
+				SetUIFloat "StartMenu/MCM/*:1/*:18/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:18/_value" bWorkForType18
+
+				SetUIFloat "StartMenu/MCM/*:1/*:20/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:20/_title" "19.RadAway"
+				SetUIFloat "StartMenu/MCM/*:1/*:20/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:20/_value" bWorkForType19
+
+				SetUIFloat "StartMenu/MCM/*:1/*:22/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:22/_title" "20.Med-X"
+				SetUIFloat "StartMenu/MCM/*:1/*:22/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:22/_value" bWorkForType20
+
+				SetUIFloat "StartMenu/MCM/*:1/*:24/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:24/_title" "21.Others"
+				SetUIFloat "StartMenu/MCM/*:1/*:24/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:24/_value" bWorkForType21
+
+				SetUIFloat "StartMenu/MCM/*:1/*:26/_enable" bWorkForChems
+				SetUIString "StartMenu/MCM/*:1/*:26/_title" "22.Type #22"
+				SetUIFloat "StartMenu/MCM/*:1/*:26/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:26/_value" bWorkForType22
+
+			elseif iSubMenu == 4
+;==================================== GAUCHE =====================================
+				SetUIString "StartMenu/MCM/*:1/*:1/_title" "> OTHERS"
+				SetUIFloat "StartMenu/MCM/*:1/*:1/_value" bWorkForMiscs
+
+				set iTemp to (( iAnimRowUnique + 1) * bWorkForMiscs )
+				SetUIFloat "StartMenu/MCM/*:1/*:3/_enable" iTemp
+				if iAnimRowMiscs == 0
+					SetUIString "StartMenu/MCM/*:1/*:3/value/*:1/string" "None"
+				elseif iAnimRowMiscs == 1
+					SetUIString "StartMenu/MCM/*:1/*:3/value/*:1/string" "One/Type"
+				elseif iAnimRowMiscs == 2
+					SetUIString "StartMenu/MCM/*:1/*:3/value/*:1/string" "Only one"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:5/_enable" bWorkForMiscs
+				SetUIFloat "StartMenu/MCM/*:1/*:5/_value" bWork1POVMiscs
+
+				SetUIFloat "StartMenu/MCM/*:1/*:7/_enable" bWorkForMiscs
+				SetUIFloat "StartMenu/MCM/*:1/*:7/_value" bWork3POVMiscs
+
+				SetUIFloat "StartMenu/MCM/*:1/*:9/_enable" bWorkForMiscs
+				if iForcePOVMiscs == 0
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "OFF"
+				elseif iForcePOVMiscs == 1
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "Forced 1st"
+				elseif iForcePOVMiscs == 2
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "Forced 3rd"
+				elseif iForcePOVMiscs == 3
+					SetUIString "StartMenu/MCM/*:1/*:9/value/*:1/string" "3rd if seated"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:11/_enable" bWorkForMiscs
+				SetUIFloat "StartMenu/MCM/*:1/*:11/_value" bWorkCombatMiscs
+
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_enable" bWorkForMiscs
+				SetUIString "StartMenu/MCM/*:1/*:15/_title" "Long reading"
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_type" 5
+				SetUIFloat "StartMenu/MCM/*:1/*:15/_value" bLongAnimationsForBooks
+
+;==================================== DROITE =====================================
+				SetUIFloat "StartMenu/MCM/*:1/*:2/_enable" bWorkForMiscs
+
+				SetUIFloat "StartMenu/MCM/*:1/*:4/_enable" bWorkForMiscs
+				SetUIString "StartMenu/MCM/*:1/*:4/_title" "25.Magazines"
+				SetUIFloat "StartMenu/MCM/*:1/*:4/_type" 1
+				if bWorkForType25 == 0
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "OFF"
+				elseif bWorkForType25 == 1
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "ON"
+				elseif bWorkForType25 == 2
+					SetUIString "StartMenu/MCM/*:1/*:4/value/*:1/string" "Open"
+				endif
+
+				SetUIFloat "StartMenu/MCM/*:1/*:6/_enable" bWorkForMiscs
+				SetUIString "StartMenu/MCM/*:1/*:6/_title" "26.Skill Books"
+				SetUIFloat "StartMenu/MCM/*:1/*:6/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:6/_value" bWorkForType26
+
+				SetUIFloat "StartMenu/MCM/*:1/*:8/_enable" bWorkForMiscs
+				SetUIString "StartMenu/MCM/*:1/*:8/_title" "27.Generic Books"
+				SetUIFloat "StartMenu/MCM/*:1/*:8/_type" 4
+				SetUIFloat "StartMenu/MCM/*:1/*:8/_value" bWorkForType27
+
+			elseif iSubMenu == 5
+				
+			endif
+
+;==================================== GAUCHE =====================================
+			; COMMUN
+			if iSubMenu >= 2 && iSubMenu != 5
+				SetUIFloat "StartMenu/MCM/*:1/*:1/_enable" 1
+				SetUIFloat "StartMenu/MCM/*:1/*:1/_RGB" 065205105
+				SetUIFloat "StartMenu/MCM/*:1/*:1/_type" 4
+
+				SetUIString "StartMenu/MCM/*:1/*:3/_title" "Animation grouping"
+				SetUIFloat "StartMenu/MCM/*:1/*:3/_type" 1
+
+				SetUIString "StartMenu/MCM/*:1/*:5/_title" "Works from 1st POV"
+				SetUIFloat "StartMenu/MCM/*:1/*:5/_type" 5
+
+				SetUIString "StartMenu/MCM/*:1/*:7/_title" "Works from 3rd POV"
+				SetUIFloat "StartMenu/MCM/*:1/*:7/_type" 5
+
+				SetUIString "StartMenu/MCM/*:1/*:9/_title" "Force POV"
+				SetUIFloat "StartMenu/MCM/*:1/*:9/_type" 1
+
+				SetUIString "StartMenu/MCM/*:1/*:11/_title" "Work in Combat"
+				SetUIFloat "StartMenu/MCM/*:1/*:11/_type" 5
+
+;==================================== DROITE =====================================
+				SetUIString "StartMenu/MCM/*:1/*:2/_title" "== TYPES =="
+				SetUIFloat "StartMenu/MCM/*:1/*:2/_RGB" 065205105
+				SetUIFloat "StartMenu/MCM/*:1/*:2/_type" 0
+			endif
+
+; ==============================================================================
+		; DEFAULT
+; ==============================================================================
+		elseif GetUIFloat "StartMenu/MCM/_Default"		;2 - DEFAULT
+			SetUIFloat "StartMenu/MCM/_Default" 0
+			SetUIFloat "StartMenu/MCM/_Reset" 1
+
+			call scrZebumperIngMCMDefaultCall {iSubMenu}
+
+; ==============================================================================
+		; NEW VALUE
+; ==============================================================================
+		elseif GetUIFloat "StartMenu/MCM/_NewValue"		;3 - NEW VALUE
+			SetUIFloat "StartMenu/MCM/_NewValue" 0
+			SetUIFloat "StartMenu/MCM/_Reset" 1
+
+			call scrZebumperIngMCMNewValueCall {iSubMenu, iOption, fValue}
+
+; ==============================================================================
+		; SHOW LIST
+; ==============================================================================
+		elseif GetUIFloat "StartMenu/MCM/_ShowList" == 1		;4 - SHOW LIST
+			SetUIFloat "StartMenu/MCM/_ShowList" 2
+
+			if iSubMenu == 1
+
+				if eval iOption == 4 || iOption == 6
+					SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:4/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:5/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:6/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:7/_enable" 1
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "None"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "Sneak"
+					SetUIString "StartMenu/MCM/*:3/*:3/text/string" "Reload"
+					SetUIString "StartMenu/MCM/*:3/*:4/text/string" "Change ammo"
+					SetUIString "StartMenu/MCM/*:3/*:5/text/string" "POV"
+					SetUIString "StartMenu/MCM/*:3/*:6/text/string" "Grab"
+					SetUIString "StartMenu/MCM/*:3/*:7/text/string" "Wait"
+				elseif eval iOption == 5 || iOption == 25 || iOption == 12
+					SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:4/_enable" 1
+				endif
+
+				if iOption == 5
+					SetUIString "StartMenu/MCM/*:3/_title" "Cancel Penalties"
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "None"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "Only in combat"
+					SetUIString "StartMenu/MCM/*:3/*:3/text/string" "Only out of combat"
+					SetUIString "StartMenu/MCM/*:3/*:4/text/string" "Everytime"
+					set iTemp to iCancelPenalty + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp
+
+				elseif iOption == 11
+					SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+;					SetUIFloat "StartMenu/MCM/*:3/*:4/_enable" 1
+					SetUIString "StartMenu/MCM/*:3/_title" "Sons du mod"
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "None"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "All"
+					SetUIString "StartMenu/MCM/*:3/*:3/text/string" "1st POV"
+;					SetUIString "StartMenu/MCM/*:3/*:4/text/string" "3ème pers."
+					set iTemp to iSounds + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp
+
+				elseif iOption == 25
+					SetUIString "StartMenu/MCM/*:3/_title" "Load/Save Settings"
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "<CANCEL>"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "Load from INI"
+					SetUIString "StartMenu/MCM/*:3/*:3/text/string" "Save to INI"
+					SetUIString "StartMenu/MCM/*:3/*:4/text/string" "Manual/Auto"
+					set iTemp to iLoadOrSave + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp
+
+				elseif iOption == 4
+					SetUIString "StartMenu/MCM/*:3/_title" "No-Anim Key"
+					set iTemp to iNoAnimKeyMCM + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp
+
+				elseif iOption == 6
+					SetUIString "StartMenu/MCM/*:3/_title" "Exclude/Include Key"
+					set iTemp to iExcludeControlMCM + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp
+
+				elseif iOption == 8
+					SetUIString "StartMenu/MCM/*:3/_title" "Cancel Animation Control"
+					SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "None"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "Grab"
+					SetUIString "StartMenu/MCM/*:3/*:3/text/string" "Attack"
+					set iTemp to iCancelControlMCM + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp
+
+				elseif iOption == 26
+					SetUIString "StartMenu/MCM/*:3/_title" "Please confirm"
+					SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "<CANCEL>"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "Clear the List"
+					set iTemp to bEmptyList + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp
+				endif
+
+			elseif eval iSubMenu != 5 && iOption == 3
+				SetUIString "StartMenu/MCM/*:3/_title" "Animation Grouping"
+				SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+				SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+				SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+				SetUIString "StartMenu/MCM/*:3/*:1/text/string" "None"
+				SetUIString "StartMenu/MCM/*:3/*:2/text/string" "One animation per type"
+				SetUIString "StartMenu/MCM/*:3/*:3/text/string" "Only one animation"
+
+				if iSubMenu == 2
+					set iTemp to iAnimRowFood + 1
+				elseif iSubMenu == 3
+					set iTemp to iAnimRowChems + 1
+				else
+					set iTemp to iAnimRowMiscs + 1
+				endif
+				SetUIFloat "StartMenu/MCM/_Value" iTemp
+
+			elseif eval iSubMenu != 5 && iOption == 9
+				SetUIString "StartMenu/MCM/*:3/_title" "Force POV"
+				SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+				SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+				SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+				SetUIFloat "StartMenu/MCM/*:3/*:4/_enable" 1
+				SetUIString "StartMenu/MCM/*:3/*:1/text/string" "None"
+				SetUIString "StartMenu/MCM/*:3/*:2/text/string" "Force 1st POV"
+				SetUIString "StartMenu/MCM/*:3/*:3/text/string" "Force 3rd POV"
+				SetUIString "StartMenu/MCM/*:3/*:4/text/string" "3rd POV if sitting"
+
+				if iSubMenu == 2
+					set iTemp to iForcePOV + 1
+				elseif iSubMenu == 3
+					set iTemp to iForcePOVChems + 1
+				else
+					set iTemp to iForcePOVMiscs + 1
+				endif
+				SetUIFloat "StartMenu/MCM/_Value" iTemp
+
+			elseif iSubMenu == 2
+
+				if eval iOption % 2 == 0 && iOption >= 4 && iOption <= 20
+					SetUIString "StartMenu/MCM/*:3/_title" "Animations"
+					SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "OFF"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "ON"
+					SetUIString "StartMenu/MCM/*:3/*:3/text/string" "ON if sitting"
+
+					if iOption == 4
+						set iTemp to bWorkForType0 + 1
+					elseif iOption == 6
+						set iTemp to bWorkForType1 + 1
+					elseif iOption == 8
+						set iTemp to bWorkForType2 + 1
+					elseif iOption == 10
+						set iTemp to bWorkForType3 + 1
+					elseif iOption == 12
+						set iTemp to bWorkForType4 + 1
+					elseif iOption == 14
+						set iTemp to bWorkForType5 + 1
+					elseif iOption == 16
+						set iTemp to bWorkForType6 + 1
+					elseif iOption == 18
+						set iTemp to bWorkForType7 + 1
+					elseif iOption == 20
+						set iTemp to bWorkForType8 + 1
+					endif
+					SetUIFloat "StartMenu/MCM/_Value" iTemp			
+
+				elseif iOption == 21
+					SetUIString "StartMenu/MCM/*:3/_title" "Animations"
+					SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "OFF"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "ON"
+					SetUIString "StartMenu/MCM/*:3/*:3/text/string" "ON (when not in combat)"
+					set iTemp to iCanteen13Animation + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp			
+				endif
+
+			elseif iSubMenu == 3
+
+				if iOption == 16
+					SetUIString "StartMenu/MCM/*:3/_title" "Turbo"
+					SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "OFF"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "ON"
+					SetUIString "StartMenu/MCM/*:3/*:3/text/string" "ON (with delay)"	
+					set iTemp to bWorkForType17 + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp			
+
+				elseif iOption == 17
+					SetUIString "StartMenu/MCM/*:3/_title" "MKII Suit Management "
+					SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+
+					if fileExists "zebumper\Animated Ingestibles - Perfect MKII.ImHere" >= 1
+						SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+						SetUIFloat "StartMenu/MCM/*:3/*:4/_enable" 1
+					else
+						SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 0
+						SetUIFloat "StartMenu/MCM/*:3/*:4/_enable" 0				
+					endif
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "Disabled"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "Compatible"
+					SetUIString "StartMenu/MCM/*:3/*:3/text/string" "Perfect"
+					SetUIString "StartMenu/MCM/*:3/*:4/text/string" "Perfect + YUP"
+					set iTemp to iMK2Managment + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp			
+				endif
+
+			elseif iSubMenu == 4
+
+				if iOption == 4
+					SetUIString "StartMenu/MCM/*:3/_title" "Animations"
+					SetUIFloat "StartMenu/MCM/*:3/*:1/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:2/_enable" 1
+					SetUIFloat "StartMenu/MCM/*:3/*:3/_enable" 1
+					SetUIString "StartMenu/MCM/*:3/*:1/text/string" "OFF"
+					SetUIString "StartMenu/MCM/*:3/*:2/text/string" "ON"
+					SetUIString "StartMenu/MCM/*:3/*:3/text/string" "ON (open)"	
+					set iTemp to bWorkForType25 + 1
+					SetUIFloat "StartMenu/MCM/_Value" iTemp
+				endif
+
+	; ^^^^^^^^^^^^^^^^
+			endif
+
+; ==============================================================================
+		; SHOW SCALE
+; ==============================================================================
+		elseif GetUIFloat "StartMenu/MCM/_ShowScale" == 1		;5 - SHOW SCALE
+			SetUIFloat "StartMenu/MCM/_ShowScale" 2
+
+			if iSubMenu == 1
+				if iOption == 7
+					SetUIFloat "StartMenu/MCM/_Value" iFasterAndFurious
+					SetUIFloat "StartMenu/MCM/_ValueDecimal" 0
+					SetUIFloat "StartMenu/MCM/_ValueIncrement" 5
+					SetUIFloat "StartMenu/MCM/_ValueMax" 200 ; in case of a mod allowing going other 100
+					SetUIFloat "StartMenu/MCM/_ValueMin" 0
+					SetUIString "StartMenu/MCM/*:2/_title" "Skill required"
+				endif
+
+			elseif iSubMenu == 2
+				if iOption == 19
+					SetUIFloat "StartMenu/MCM/_Value" iTimeScaleVar
+					SetUIFloat "StartMenu/MCM/_ValueDecimal" 0
+					SetUIFloat "StartMenu/MCM/_ValueIncrement" 1
+					SetUIFloat "StartMenu/MCM/_ValueMax" 29
+					SetUIFloat "StartMenu/MCM/_ValueMin" 0
+					SetUIString "StartMenu/MCM/*:2/_title" "Timescale variation"
+				endif
+			endif
+
+; ==============================================================================
+		; DEFAULT SCALE
+; ==============================================================================
+		elseif GetUIFloat "StartMenu/MCM/_DefaultScale"		;6 - DEFAULT SCALE
+			SetUIFloat "StartMenu/MCM/_DefaultScale" 0
+			SetUIFloat "StartMenu/MCM/_ShowScale" 2
+
+			if iSubMenu == 1
+				if iOption == 7
+					SetUIFloat "StartMenu/MCM/_Value" 75
+				endif
+			elseif iSubMenu == 2
+				if iOption == 19
+					SetUIFloat "StartMenu/MCM/_Value" 0
+				endif
+			endif
+		endif
+
+; ==============================================================================
+		; MOUSE OVER
+; ==============================================================================
+		if iMouseover != GetUIFloat "StartMenu/MCM/*:1/_optionID"		;7 - MOUSE-OVER
+			set iMouseover to GetUIFloat "StartMenu/MCM/*:1/_optionID"
+			if iMouseover
+				SetUIFloat "StartMenu/MCM/MCM_Info/visible" 1
+				call scrZebumperIngMCMMouseOverCall {iSubMenu, iMouseOver}
+			else
+				SetUIFloat "StartMenu/MCM/MCM_Info/visible" 0
+			endif
+		endif
+	endif
+END 

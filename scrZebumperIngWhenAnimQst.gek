@@ -1,0 +1,39 @@
+scn scrZebumperIngWhenAnimQst
+
+BEGIN gameMode
+
+	if qstZebumperIngAnimationList.fStep != 4
+		if getQuestRunning qstZebumperIngSounds
+			set qstZebumperIngSounds.bStopMe to 1
+		endif
+		stopQuest qstZebumperIngWhenAnim
+		RETURN ; just in case
+
+	elseif eval isPC1stPerson == 1 && qstZebumperIngAnimationList.bWasLaunchedIn3 == 1
+		printD "Was launched in 3rd POV, you can't change now."
+		toggleFirstPerson 0
+	endif
+
+	if isControlPressed 15	; wait control
+		; nothing
+	elseif eval isControlPressed qstZebumperIngMCM.iCancelControl || isPlayerSwimming || player.getDead == 1 || player.getKnockedState != 0 || player.getFurnitureMarkerID != qstZebumperIngAnimationList.iPosition || getINIFloat "Functions:iIsStopped" "zebumper\AnimatedIngestiblesTechnical.ini" < 0
+		printD "STOP ANIM"
+
+		; stop anim
+		set qstZebumperIngAnimationList.bOnPause to 1
+		player.CIOS aeZebumperIngStopAnim
+
+		if qstZebumperIngAnimationList.fStep == 4
+			set qstZebumperIngAnimationList.iValueMax to 2
+		endif
+
+		; stop sound
+		if getQuestRunning qstZebumperIngSounds
+			set qstZebumperIngSounds.bStopMe to 1
+		endif
+
+		; stop this
+		stopQuest qstZebumperIngWhenAnim
+	endif
+
+END 

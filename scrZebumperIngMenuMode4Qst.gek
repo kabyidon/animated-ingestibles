@@ -1,0 +1,23 @@
+scn scrZebumperIngMenuMode4Qst
+
+int iModIndex
+ref rEffectRef 
+
+BEGIN menuMode 4
+
+	; CLEAN CROSSMODS
+	removeINISection "ModList" "zebumper\zebumper's cross mods config.ini"
+
+	; CANTEEN 13
+	if isModLoaded "ClassicPack.esm"
+		printD "classic pack is here"
+		set rEffectRef to buildRef 0 1523858 ; canteen effect
+		printD $rEffectRef
+		if getType rEffectRef == 20
+			addNewEffect rEffectRef beZebumperIngCanteen13 0 0
+		endif
+	endif
+
+	stopQuest qstZebumperIngMenuMode4
+
+END 

@@ -1,0 +1,17 @@
+scn scrZebumperIngCanteenEff
+
+ref rEated
+
+BEGIN scriptEffectStart
+
+	if eval qstZebumperIngMCM.iCanteen13Animation != 0
+		if eval qstZebumperIngMCM.iCanteen13Animation == 1 || player.isInCombat == 0
+			set rEated to BuildRef 0 1521106 ; canteen
+			if getObjectType rEated == 31	; misc
+				printD "canteen ok"
+				call scrZebumperIngOnUseAidItem {rEated}
+			endif
+		endif
+	endif
+
+END

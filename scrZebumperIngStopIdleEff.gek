@@ -1,0 +1,7 @@
+scn scrZebumperIngStopIdleEff
+
+BEGIN scriptEffectStart
+
+	stopIdle
+
+END 

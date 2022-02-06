@@ -1,0 +1,1009 @@
+scn scrZebumperIngBuildAnimationQst
+
+int iAnimation
+int iAnimObject
+int iAccFirst
+int iAcc
+int iAnimationFirst
+int iAnimObjectFirst
+int iType
+int iSound
+int iSoundFirst
+int iTimer
+int iTimer3rd
+int iPosition
+int iHand
+int iHandAcc
+int iTimerObjHide
+int iTimerObjHideAcc
+int iTimerObjShow
+int iTimerObjShowAcc
+
+int iArrayCount
+int iStringLenght
+int iValue
+
+float fStep
+
+short bUseJohnny
+short bUseCustom
+short bForceLonger
+short bUseVanillaPath
+
+ref rEated
+ref rAnimObjectBaseForm
+ref rAnimObjectAcc
+
+array_var aModelName
+array_var aINIValue
+array_var aDirectValue
+
+string_var sModelName
+string_var sModelNameConstruct
+string_var sINIStart
+string_var sINIValue
+string_var sString
+string_var sPluginName
+
+string_var sPath
+string_var sINIKey
+string_var sPathAnim
+string_var sPathObj
+string_var sPathAcc
+
+BEGIN gameMode
+
+	if fStep == -1
+		; pas dans le INI
+		printD "pas dans INI ou config incorrecte"
+		listRemoveNth listZebumperIngAnimationRow 0
+
+		if qstZebumperIngMCM.bWriteINICustom == 1
+			setINIstring $sINIStart "%e" "zebumper\AnimatedIngestiblesTechnicalCustom.ini"
+		endif
+		printD $sModelNameConstruct + " : CONFIG INCOMPLETE"
+		listRemoveForm listZebumperIngAll rEated
+		set qstZebumperIngAnimationList.fStep to 0
+		set fStep to -2
+	endif
+
+	if fStep == -2
+		sv_destruct sPath, sINIKey, sPathAnim, sPathObj, sPathAcc, sPluginName
+		sv_destruct sModelName, sModelNameConstruct, sINIStart, sINIValue, sString
+		let aINIValue := ar_null
+		let aModelName := ar_null
+		set fStep to 0
+		stopQuest qstZebumperIngBuildModels
+		RETURN	; pas besoin
+	endif
+
+	if fStep == 0
+
+		; Ini spécifique a un mod
+		set iHand to getSourceModIndex rEated
+		let sPluginName := getNthModName iHand
+
+		; RAZ
+		set iAnimation to 0
+		set iAnimObject to 0
+		set iAcc to 0
+		set iAccFirst to 0
+		set iAnimationFirst to 0 
+		set iAnimObjectFirst to 0
+		set iTimer to 0
+		set iTimer3rd to 0
+		set iHand to 0
+		set iHandAcc to 0
+		set iTimerObjHide to 0
+		set iTimerObjHideAcc to 0
+		set iTimerObjShow to 0
+		set iTimerObjShowAcc to 0
+		set bUseJohnny to 0
+		set bUseCustom to 0
+		set iType to -1
+		set rEated to qstZebumperIngAnimationList.rEated
+		set qstZebumperIngAnimationList.bUseDirect to 0
+		set qstZebumperIngAnimationList.iForcePOVBuild to 0
+		let aINIValue := ar_Construct array
+
+		;========================================================================
+		;========================================================================
+		; Chorando se foi quem um dia so me fez chorar...
+		; VARIATIONS
+		ref rVariationLambda := (BEGIN function {}
+			printD "::var found at pos " + $iValue
+			sv_Erase sINIValue iValue 5
+			let sString := sINIValue[iValue]
+			sv_Erase sINIValue iValue 1
+			printD "variation number is " + $sString
+			let iArrayCount := #sString
+			set iArrayCount to iArrayCount + 1
+			set iStringLenght to rand 0 iArrayCount
+			printD "rand variation: " + $iStringLenght
+			if iStringLenght > 0
+				sv_Insert "!%.0f!", iStringLenght sINIValue iValue
+			endif
+		end)
+
+		; INI and Vanilla Path check
+		ref rINICheckLambdaBis := (BEGIN function {}
+			if eval sString == ".test"			
+				let sINIValue := getINIString $sINIKey "zebumper\AnimatedIngestiblesPathsCustom.ini"
+				let sString := sINIValue + ".test"
+				if eval sString == ".test"
+				; use default
+					let sINIValue := getINIString $sINIKey "zebumper\AnimatedIngestiblesPaths.ini"
+				endif
+			endif
+			set bUseVanillaPath to 0
+			let iValue := sv_Find "\" sINIValue
+			if iValue >= 0
+				set bUseVanillaPath to 1
+				if iValue == 0 ; for files direcly in meshes folder
+					sv_Erase sINIValue 0 1 ; delete first '\'
+				endif
+			endif
+		end)
+
+		ref rINICheckLambda := (BEGIN function {}
+			let sINIValue := "zebumper\AnimatedIngestiblesPluginPatches\" + sPluginName + "_Paths.ini"
+			let sINIValue := getINIString $sINIKey $sINIValue
+			let sString := sINIValue + ".test"
+			call rINICheckLambdaBis
+		end)
+
+		; FASTER
+		ref rFasterLambda := (BEGIN function {}
+			printD "vérifie le faster"
+			set bUseJohnny to 0 ; re-use this variable
+			if iType < 11	; food
+				if player.getAV Survival >= qstZebumperIngMCM.iFasterAndFurious
+					set bUseJohnny to 1
+					printD "faster activé : food"
+				endif
+			elseif player.getAV Medicine >= qstZebumperIngMCM.iFasterAndFurious
+				set bUseJohnny to 1
+				printD "faster activé : chem"			
+			endif
+		end)
+
+		;========================================================================
+		;========================================================================
+		; #########################
+		; IDENTIFICATION DE L'OBJET
+		; #########################
+		; /////// CHEMIN MODÈLE 3D ///////
+		let sModelName := "%e"
+
+		; johnny guitar ID
+		if qstZebumperIngMCM.bUseJohnny == 1
+			let sModelName := getEditorID rEated
+			let sModelName += "EDID"
+			let sINIStart := "Ingestibles:" + $sModelName
+
+			let sINIValue := "config\zebumper\AnimatedIngestiblesPluginPatches\" + sPluginName + "_Tech.ini"
+			if fileExists $sINIValue > 0
+				sv_Erase sINIValue 0 7 ; suppr 'config/' 
+				printD "test plugin: " + $sINIValue
+				let sINIValue := getINIString $sINIStart $sINIValue
+				printD "test plugin INI: " + $sINIValue
+				let aINIValue := sv_split sINIValue "|"
+				set iArrayCount to ar_size aINIValue
+				if eval iArrayCount == 21 || iArrayCount == 2
+					let sModelNameConstruct := $sModelName
+					set bUseJohnny to 1				
+				endif
+			endif
+
+			if bUseJohnny == 0
+
+				if fileExists "config\zebumper\AnimatedIngestiblesTechnicalCustom.ini" > 0
+					let sINIValue := getINIString $sINIStart "zebumper\AnimatedIngestiblesTechnicalCustom.ini"
+					let aINIValue := sv_split sINIValue "|"
+					set iArrayCount to ar_size aINIValue
+					if eval iArrayCount == 21 || iArrayCount == 2
+						let sModelNameConstruct := $sModelName
+						set bUseJohnny to 1					
+					endif
+				endif
+
+				if bUseJohnny == 0
+					let sINIValue := getINIstring $sINIStart "zebumper\AnimatedIngestiblesTechnical.ini"
+					let aINIValue := sv_split sINIValue "|"
+					set iArrayCount to ar_size aINIValue
+					if eval iArrayCount == 21 || iArrayCount == 2
+						let sModelNameConstruct := $sModelName
+						set bUseJohnny to 1
+					endif
+				endif
+			endif
+
+		endif
+
+		if bUseJohnny == 0
+			let sModelName := getModelPath rEated			; =======> obtention du chemin du modèle 3D
+			let aModelName := sv_split sModelName "\"		; =======> séparation des éléments du chemin du modèle 3D (repérage des '\')
+
+			set iArrayCount to ar_size aModelName			; =======> total du nombre d'éléments dans la liste
+			set iArrayCount to iArrayCount - 1				; =======> gestion du zéro
+
+			printD $sModelName
+
+			; /////// NOM MODÈLE 3D ///////
+			let sModelNameConstruct := aModelName[iArrayCount]
+			let iStringLenght := sv_length sModelNameConstruct
+			set iStringLenght to iStringLenght - 4		; =======> retirer les 4 dernières lettres (le '.nif')
+			sv_erase sModelNameConstruct iStringLenght
+		endif
+
+			printD $sModelNameConstruct
+			set fStep to 2
+
+			; à part pour la commande 'use'
+			let sINIStart := "Ingestibles:" + $sModelNameConstruct
+	
+	elseif fStep == 2
+
+		; #########################
+		; CONFIG DEPUIS INI
+		; #########################
+		set bUseJohnny to 0
+
+		; recherche dans plugin
+		let sINIValue := "config\zebumper\AnimatedIngestiblesPluginPatches\" + $sPluginName + "_Tech.ini"
+		if fileExists $sINIValue > 0
+			sv_Erase sINIValue 0 7
+
+			printD "INI plugin a trouver : " + $sINIValue
+			let sINIValue := getINIString $sINIStart $sINIValue
+			printD "INI : " + $sINIValue
+			let aINIValue := sv_split sINIValue "|"
+			set iArrayCount to ar_size aINIValue
+			printD "array size : " + $iArrayCount
+			if eval iArrayCount == 21 || iArrayCount == 2
+				set bUseJohnny to 1
+			endif
+		endif
+
+		; recherche dans custom
+		if bUseJohnny == 0
+			let sINIValue := "config\zebumper\AnimatedIngestiblesTechnicalCustom.ini"
+			if fileExists $sINIValue > 0
+				let sINIValue := getINIstring $sINIStart "zebumper\AnimatedIngestiblesTechnicalCustom.ini"
+				let aINIValue := sv_split sINIValue "|"
+				set iArrayCount to ar_size aINIValue
+				printD "array size : " + $iArrayCount
+				if eval iArrayCount == 21 || iArrayCount == 2
+					set bUseJohnny to 1
+				endif
+			endif
+
+			; recherche dans vanilla
+			if bUseJohnny == 0
+				let sINIValue := getINIstring $sINIStart "zebumper\AnimatedIngestiblesTechnical.ini"
+				let aINIValue := sv_split sINIValue "|"
+				set iArrayCount to ar_size aINIValue
+				printD "use vanilla ini"
+				printD "array size : " + $iArrayCount
+				if eval iArrayCount != 21 && iArrayCount != 2
+					set fStep to -1
+					RETURN
+				endif
+			endif
+		endif
+
+		printD "ini valeur : " + $sINIValue
+
+		let sString := aINIValue[0]
+		set fStep to 2.5
+		RETURN
+
+	elseif fStep == 2.5
+
+		; RANDOM
+		if eval sString == "random"
+			printD "RANDOM"
+			let sString := aINIValue[1]
+			printD "choose between : " + $sString
+			let aINIValue := sv_split sString ":"
+			set iArrayCount to ar_size aINIValue
+			if iArrayCount < 2	; cannot be just one XD
+				set fStep to -1	; cancel everything
+				RETURN
+			endif
+			set iValue to rand 0 iArrayCount	; rand 0 100 donne 0 à 99
+			printD "value random is " + $iValue
+			let sString := aINIValue[iValue]
+			printD "sString is now: " + $sString
+			let aINIValue[1] := $sString
+			let sString := "use"
+		endif
+
+		if eval sv_find "use" sString >= 0 ; == "use" || sString == "useWithType"
+
+			; use but change type
+			if eval sv_find "#" sString >= 0
+				sv_erase sString 0 4
+				let iType := #sString
+				printD "iType changé pour type " + $iType
+			endif
+
+			; nouvelle construction
+			let sString := aINIValue[1]
+			let sINIStart := "Ingestibles:" + $sString
+			set fStep to 2
+
+			RETURN
+		elseif eval sString == "disable"
+			printD "item animation disabled in INI"				
+			listRemoveNth listZebumperIngAnimationRow 0
+			listRemoveForm listZebumperIngAll rEated
+			set qstZebumperIngAnimationList.fStep to 0
+			set fStep to -2
+			RETURN
+		endif
+
+		if iArrayCount == 21
+
+			printD "déja dans ini et config correcte + iType == " + $iType
+
+			if iType == -1
+				sv_Erase sString 0 1
+				let iType := #sString		; type
+			endif
+
+			set iPosition to player.getFurnitureMarkerID
+			printD "furniture marker : " + $iPosition
+			if iPosition == 15	; tabouret
+				; test si tabouret devant machine à sous
+				if eval player.isCurrentFurnitureObj NVSlotMachineStoolList || player.isCurrentFurnitureObj NVSitStoolNoLeanList
+					set iPosition to 0
+					set iValue to 1
+				else
+					set iValue to 9
+				endif
+			elseif eval iPosition == 13 || iPosition == 14	; chaise
+				set iValue to 13
+			elseif eval iPosition == 11 || iPosition == 12	; table
+				set iValue to 17
+				; exclure tables du gourmand UL
+				if eval player.getInCell ULGourmand && qstZebumperIngMCM.bDisableULGourmandTweaks == 0
+					set iValue to 13
+				endif
+				if player.isCurrentFurnitureObj ComputerChairs
+					set iValue to 13
+				endif
+
+;			elseif iPosition == 17	; sol
+			elseif eval iPosition == 0 || iPosition == 17
+				set iPosition to 0
+				set iValue to 1
+			else
+				printD "position incompatible"
+				listRemoveNth listZebumperIngAnimationRow 0
+				set qstZebumperIngAnimationList.fStep to 0
+				set fStep to -2
+				RETURN
+			endif
+
+			let sString := aINIValue[iValue]
+			sv_Erase sString 0 1 
+
+			; ///// Forced POV
+			if eval sString == "F1"
+				set qstZebumperIngAnimationList.iForcePOVBuild to 1
+			elseif eval sString == "OFF"
+				set qstZebumperIngAnimationList.iDisabledFromPOV to 3
+			else
+				let iAnimation := #sString		; animation
+				set iValue to iValue + 1
+
+				let sString := aINIValue[iValue]
+				sv_Erase sString 0 1 
+				let iAnimObject := #sString		; animObj
+				set iValue to iValue + 1
+
+				let sString := aINIValue[iValue]
+				sv_Erase sString 0 1 
+				let iAcc := #sString			; accessoire
+				set iValue to iValue + 1
+
+				let sString := aINIValue[iValue]
+				sv_Erase sString 0 1 
+				let iSound := #sString		; son 3eme
+			endif
+
+			; 1ST POV
+			set iValue to 5
+			let sString := aINIValue[iValue]
+			sv_Erase sString 0 1 
+			if eval sString == "F3"
+				set qstZebumperIngAnimationList.iForcePOVBuild to 3
+			elseif eval sString == "OFF"
+				set qstZebumperIngAnimationList.iDisabledFromPOV to 1
+			else
+				let iAnimationFirst := #sString	; animation 1ere personne
+				set iValue to iValue + 1
+
+				let sString := aINIValue[iValue]
+				sv_Erase sString 0 1 
+
+				; direct
+				if eval sv_Find "$" sString >= 0
+					sv_Replace "$|dir_" sString ; replace the $ by dir_
+					let sINIStart := "Direct:" + $sString
+					set bUseCustom to 0
+
+					; recherche dans plugin
+					let sINIValue := "config\zebumper\AnimatedIngestiblesPluginPatches\" + $sPluginName + "_Tech.ini"
+					if fileExists $sINIValue > 0
+						sv_Erase sINIValue 0 7
+						printD "INI plugin a trouver : " + $sINIValue
+						let sINIValue := getINIString $sINIStart $sINIValue
+						let sString := sINIValue + ".test"
+						if eval sString != ".test"
+							set bUseCustom to 1
+						endif
+					endif
+
+					; recherche custom
+					if bUseCustom == 0
+						let sINIValue := "config\zebumper\AnimatedIngestiblesTechnicalCustom.ini"	
+						if fileExists $sINIValue > 0
+							sv_Erase sINIValue 0 7
+							let sINIValue := getINIString $sINIStart $sINIValue
+							let sString := sINIValue + ".test"
+							if eval sString != ".test"
+								set bUseCustom to 1
+							endif
+
+						endif
+					endif
+					
+					; recherche dans vanilla
+					if bUseCustom == 0
+						let sINIValue := "config\zebumper\AnimatedIngestiblesTechnical.ini"
+						sv_Erase sINIValue 0 7
+						let sINIValue := getINIString $sINIStart $sINIValue
+						let sString := sINIValue + ".test"
+						if eval sString == ".test"
+							set fStep to -1
+							RETURN
+						endif
+;						set bUseCustom to 1
+					endif
+
+					let sString := sINIValue
+
+				endif
+
+				if eval sv_Find "/" sString >= 0
+					let aDirectValue := sv_split sString "/"
+					let sString := aDirectValue[0]
+					if eval sString == "R"
+						set iHand to 1
+					elseif eval sString == "L"
+						set iHand to 2
+					else
+						set fStep to -1
+						RETURN
+					endif
+					; translation
+					let sString := aDirectValue[1]
+					let qstZebumperIngAnimationList.fTransX := #sString
+					let sString := aDirectValue[2]
+					let qstZebumperIngAnimationList.fTransY := #sString
+					let sString := aDirectValue[3]
+					let qstZebumperIngAnimationList.fTransZ := #sString
+
+					; rotation
+					let sString := aDirectValue[4]
+					let qstZebumperIngAnimationList.fRotX := #sString
+					let sString := aDirectValue[5]
+					let qstZebumperIngAnimationList.fRotY := #sString
+					let sString := aDirectValue[6]
+					let qstZebumperIngAnimationList.fRotZ := #sString
+
+					; scale
+					let sString := aDirectValue[7]
+					let qstZebumperIngAnimationList.fScale := #sString
+
+					set qstZebumperIngAnimationList.bUseDirect to 1
+				else				
+					let iAnimObjectFirst := #sString ; objet 1ere personne
+				endif
+				set iValue to iValue + 1
+
+				let sString := aINIValue[iValue]
+				sv_Erase sString 0 1 
+				let iAccFirst := #sString ; acc 1ere personne
+				set iValue to iValue + 1
+
+				let sString := aINIValue[iValue]
+				sv_Erase sString 0 1 
+				let iSoundFirst := #sString ; son 1ere personne
+				set iValue to iValue + 1
+			endif
+
+			printD "type : " + $iType
+			printD "animation : " + $iAnimation
+			printD "animobj : " + $iAnimObject
+			printD "accessoire : " + $iAcc
+			printD "anim first : " + $iAnimationFirst
+			printD "objet first : " + $iAnimObjectFirst
+			printD "position : " + $iPosition
+			printD "son 3eme : " + $iSound
+			printD "son 1ere : " + $iSoundFirst
+			printD "acc first : " + $iAccFirst
+
+			printD "NOPE 3"
+			; ///// si une par type et type deja utilisé
+			if qstZebumperIngMCM.iAnimRowUnique == 0
+				if iType < 11
+					set qstZebumperIngAnimationList.iAnimRowOption to qstZebumperIngMCM.iAnimRowFood
+				elseif eval iType >= 11 && iType < 25
+					set qstZebumperIngAnimationList.iAnimRowOption to qstZebumperIngMCM.iAnimRowChems
+				else
+					set qstZebumperIngAnimationList.iAnimRowOption to qstZebumperIngMCM.iAnimRowMiscs
+				endif
+
+				if qstZebumperIngAnimationList.iAnimRowOption >= 1
+					let sString := "InGame:bTypeUsed" + $iType
+					printD "type a vérifier : " + $sString
+					if getINIFloat $sString "zebumper\AnimatedIngestiblesTechnical.ini" == 1	; <- type already use in the row
+						printD "type déjà utilisé : " + $iType
+						listRemoveNth listZebumperIngAnimationRow 0
+						set qstZebumperIngAnimationList.fStep to 0
+						set fStep to -2
+						printD "NOPE !!! Annulé"
+						RETURN
+					endif
+				endif
+			endif
+
+		else
+			set fStep to -1
+			RETURN
+		endif
+
+		set fStep to 3
+	
+	elseif fStep == 3
+
+		set rAnimObjectBaseForm to aoZebumperIngMain
+		set rAnimObjectAcc to aoZebumperIngAcc
+
+		; ///// wild wasteland surprises !!!
+		if eval qstZebumperIngMCM.iWildWastelandTweaks >= 1 && player.hasPerk WildWasteland
+
+			; ///// gore human flesh
+			if eval player.hasPerk Cannibal && qstZebumperIngMCM.iWildHumanGore < 2
+				if iAnimObject == 308 			; FoodHumanMeat
+					set iAnimObject to 327 		; FoodHumanArm
+;					if qstZebumperIngMCM.iWildHumanGore == 1 && qstZebumperIngMCM.iWildWastelandTweaks == 1
+						set qstZebumperIngAnimationList.iWildWastelandSurprise to 1
+;					elseif qstZebumperIngMCM.iWildHumanGore == 0	; découverte
+;						set qstZebumperIngMCM.iWildHumanGore to 1
+;					endif
+				elseif iAnimObject == 309 		; FoodHumanTable
+					set iAnimObject to 328 		; FoodGoreTable
+;					if qstZebumperIngMCM.iWildHumanGore == 1 && qstZebumperIngMCM.iWildWastelandTweaks == 1
+						set qstZebumperIngAnimationList.iWildWastelandSurprise to 1
+;					elseif qstZebumperIngMCM.iWildHumanGore == 0	; découverte
+;						set qstZebumperIngMCM.iWildHumanGore to 1
+;					endif
+				endif
+				if iAnimObjectFirst == 308 		; FoodHumanMeat
+					set iAnimObjectFirst to 327 ; FoodHumanArm
+;					if qstZebumperIngMCM.iWildHumanGore == 1 && qstZebumperIngMCM.iWildWastelandTweaks == 1
+						set qstZebumperIngAnimationList.iWildWastelandSurprise to 1
+;					elseif qstZebumperIngMCM.iWildHumanGore == 0	; découverte
+;						set qstZebumperIngMCM.iWildHumanGore to 1
+;					endif
+				endif
+			endif
+
+;			if eval player.getHair == 
+
+;			endif
+
+		endif
+
+		set qstZebumperIngAnimationList.iType to iType
+		set qstZebumperIngAnimationList.iSound to iSound
+		set qstZebumperIngAnimationList.iSoundFirst to iSoundFirst
+		set qstZebumperIngAnimationList.iPosition to iPosition
+		set qstZebumperIngAnimationList.iAcc to iAcc
+
+		; ======================================
+		; CHEMINS DES FICHIERS VUE 3EME PERSONNE
+		; ======================================
+		; ANIMATION
+		if iAnimation > 0
+
+			; steady animation for female
+			if iAnimation == 55 && getPCIsSex Female
+				set iAnimation to 155
+			endif
+
+			let sINIKey := "Animations:iAnimation_" + $iAnimation
+			call rINICheckLambda
+
+			let aINIValue := sv_split sINIValue "|"
+			set iArrayCount to ar_size aINIValue
+
+			printD "array count: " + $iArrayCount
+			printD "anim 3rd value ini : " + $sINIValue
+			let sString := aINIValue[0]
+
+			; GESTION FASTER!
+			set qstZebumperIngAnimationList.bIsFaster3rd to 0
+			if eval player.isInCombat && iType < 25 && qstZebumperIngMCM.iFasterAndFurious > 0 && iPosition == 0
+;			if iType < 25 && qstZebumperIngMCM.iFasterAndFurious > 0 && iPosition == 0
+
+				call rFasterLambda
+
+				if bUseJohnny == 1
+					if bUseVanillaPath == 0
+						let sPath := "meshes\Characters\_Male\IdleAnims\zebumper\Ingestibles\Anim3rdPOV\" + $sString + "!Faster!.kf"
+					else
+						let sPath := "meshes\" + $sString + "!Faster!.kf"
+					endif
+					printD $sPath
+					if fileExists $sPath > 0
+						printD "fichier d'animation Faster! détecté"
+						let sString := $sString + "!Faster!"
+						set qstZebumperIngAnimationList.bIsFaster3rd to 1
+					endif
+				endif
+			endif
+
+			printD "anim 3rd name : " + $sString
+			if bUseVanillaPath == 0
+				let sPathAnim := "Characters\_Male\IdleAnims\zebumper\Ingestibles\Anim3rdPOV\" + $sString + ".kf"
+			else
+				let sPathAnim := $sString + ".kf"
+			endif
+
+			if iArrayCount == 2
+				let sString := aINIValue[1]
+				let iTimer3rd := #sString
+				printD "timer 3rd : " + $iTimer3rd
+
+			; SUPPR (only debug)
+			elseif iArrayCount != 1
+				printD "Config de l'anim non conforme"
+			; SUPPR (only debug)
+			endif
+		endif
+
+		; OBJET
+		let sINIKey := "Objects:iObject_" + $iAnimObject
+		call rINICheckLambda
+
+		; variations
+		printD "VARIATIONS"
+		let iValue := sv_Find "::var" sINIValue
+		if iValue >= 0
+			call rVariationLambda
+		endif
+		printD "inivalue après variation : " + $sINIValue
+
+		; GESTION LIVRE OUVERT (Type 25)
+		if eval iType == 25 && qstZebumperIngMCM.bWorkForType25 == 2
+			if bUseVanillaPath == 0
+				let sPath := "meshes\zebumper\Ingestibles\3rdPOV\" + $sINIValue + "Open.nif"
+			else
+				let sPath := $sINIValue + "Open.nif"
+			endif
+			if fileExists $sPath > 0
+				printD "fichier de livre ouvert animé trouvé"
+				let sINIValue := sINIValue + "Open"
+			endif
+		endif
+
+		if bUseVanillaPath == 0
+			let sPathObj := "zebumper\Ingestibles\3rdPOV\" + $sINIValue + ".nif"
+		else
+			let sPathObj := $sINIValue + ".nif"
+		endif
+
+		; ACCESSOIRE
+		if iAcc > 0
+			let sINIKey := "Accessories:iAccessory_" + $iAcc
+			call rINICheckLambda
+
+			if bUseVanillaPath == 0
+				let sPathAcc := "zebumper\Ingestibles\3rdPOV\Acc\" + $sINIValue + ".nif"
+			else
+				let sPathAcc := $sINIValue + ".nif"
+			endif
+
+		endif
+
+		; ====================================
+		; CONSTRUCTION ANIMATION 3EME PERSONNE
+		; ====================================
+		let sPath := "meshes\" + sPathAnim
+		if fileExists $sPath == 0
+			printD "fichier d'animation non trouvé : " + $sPathAnim
+			let sPathAnim := "Characters\_Male\IdleAnims\zebumper\Ingestibles\DrinkingStandingA.kf"
+		endif
+
+		let sPath := "meshes\" + sPathObj
+		if fileExists $sPath == 0
+			printD "fichier d'objet animé non trouvé : " + $sPathObj
+			let sPathObj := "zebumper\Ingestibles\3rdPOV\FoodGlass.nif"
+		endif
+
+		let sPath := "meshes\" + sPathAcc
+		if fileExists $sPath == 0
+			printD "fichier d'accessoire non trouvé : " + $sPathAcc
+			let sPathAcc := "zebumper\Ingestibles\3rdPOV\Acc\SporkTableAcc.nif"
+		endif
+
+		setIdleAnimPath animZebumperIngGeneric $sPathAnim
+		setModelPathEx $sPathObj rAnimObjectBaseForm
+		setModelPathEx $sPathAcc rAnimObjectAcc
+
+		set fStep to 4
+	
+	elseif fStep == 4
+
+	; ======================================
+	; CHEMINS DES FICHIERS VUE 1ERE PERSONNE
+	; ======================================
+	
+		; ANIMATION
+		if iAnimationFirst > 0
+			let sINIKey := "AnimationsFirst:iAnimation_" + $iAnimationFirst
+			call rINICheckLambda
+
+			; SPLIT !
+			let aINIValue := sv_split sINIValue "|"
+			set iArrayCount to ar_size aINIValue
+
+			printD "anim 1st value ini : " + $sINIValue
+			let sString := aINIValue[0]
+
+			printD "anim 1st name : " + $sString
+
+			; GESTION FASTER!
+			set qstZebumperIngAnimationList.bIsFaster to 0
+			if eval player.isInCombat && iType < 25 && qstZebumperIngMCM.iFasterAndFurious > 0 && iPosition == 0
+
+				call rFasterLambda
+
+				if bUseJohnny == 1
+					if bUseVanillaPath == 0
+						let sPath := "meshes\Characters\_Male\IdleAnims\zebumper\Ingestibles\Anim1stPOV\" + $sString + "!Faster!.kf"
+					else
+						let sPath := "meshes\" + $sString + "!Faster!.kf"
+					endif
+					printD $sPath
+					if fileExists $sPath > 0
+						printD "fichier d'animation Faster! détecté"
+						let sString := $sString + "!Faster!"
+						set qstZebumperIngAnimationList.bIsFaster to 1
+					endif
+				endif
+			endif
+
+			if bUseVanillaPath == 0
+				let sPathAnim := "Characters\_Male\IdleAnims\zebumper\Ingestibles\Anim1stPOV\" + $sString + ".kf"
+			else
+				let sPathAnim := $sString + ".kf"
+			endif
+
+			if iArrayCount == 2
+				let sString := aINIValue[1]
+				let iTimer := #sString
+			elseif iArrayCount == 1
+				; no timer, animation will play until its end but create bugs with faster
+				set iTimer to 0
+			else
+				printD "Configuration incorrecte de l'animation"
+			endif
+
+			printD "timer 1st : " + $iTimer
+
+			; OBJET
+			if iHand == 0	; iHand not 0 means use direct function 
+
+				let sINIKey := "ObjectsFirst:iObject_" + $iAnimObjectFirst
+
+				call rINICheckLambda
+
+				; variations
+				printD "VARIATIONS"
+				let iValue := sv_Find "::var" sINIValue
+				if iValue >= 0
+					call rVariationLambda
+				endif
+				printD "inivalue après variation : " + $sINIValue
+
+				let aINIValue := sv_split sINIValue "|"
+				set iArrayCount to ar_size aINIValue
+
+				printD "obj 1st value ini : " + $sINIValue
+				let sString := aINIValue[0]
+
+				printD "obj 1st name : " + $sString
+				if bUseVanillaPath == 0
+					let sPathObj := "zebumper\Ingestibles\1stPOV\" + $sString + ".nif"
+				else
+					let sPathObj := $sString + ".nif"
+				endif
+
+				if iArrayCount > 1
+					;objet model | R/L hand | Timer Show | Timer Hide
+					let sString := aINIValue[1]
+					if eval sString == "R"
+						set iHand to 1	; model will be attached to right hand
+					else ; if eval sString == "L"
+						set iHand to 2	; model will be attached to left hand
+					endif
+
+					if iArrayCount > 2
+						let sString := aINIValue[2]
+						let iTimerObjShow := #sString
+
+						if iArrayCount > 3
+							let sString := aINIValue[3]
+							let iTimerObjHide := #sString
+						endif
+
+					endif
+
+				endif
+			else	; iHand already to 1 (R) or 2 (L), use direct
+				let sPathObj := getModelPath rEated
+			endif
+
+			; ACCESSOIRE
+			if iAccFirst > 0
+				let sINIKey := "AccessoriesFirst:iAccessory_" + $iAccFirst
+
+				call rINICheckLambda
+
+				let aINIValue := sv_split sINIValue "|"
+				set iArrayCount to ar_size aINIValue
+
+				printD "acc 1st value ini : " + $sINIValue
+				let sString := aINIValue[0]
+
+				printD "acc 1st name : " + $sString
+				if bUseVanillaPath == 0
+					let sPathAcc := "zebumper\Ingestibles\1stPOV\acc\" + $sString + ".nif"
+				else
+					let sPathAcc := $sString + ".nif"
+				endif
+
+				if iArrayCount > 1
+					;acc model | R/L hand | Timer Show | Timer Hide
+					let sString := aINIValue[1]
+					if eval sString == "R"
+						set iHandAcc to 1	; acc model will be attached to right hand
+					else ; if eval sString == "L"
+						set iHandAcc to 2	; acc model will be attached to left hand
+					endif
+
+					if iArrayCount > 2
+						let sString := aINIValue[2]
+						let iTimerObjShowAcc := #sString
+
+						if iArrayCount > 3
+							let sString := aINIValue[3]
+							let iTimerObjHideAcc := #sString
+						endif
+
+					endif
+				endif
+
+			endif
+
+			; CONSTRUCTION ANIMATION 1ERE PERSONNE
+			let sPath := "meshes\" + sPathAnim
+			if fileExists $sPath == 0
+				printD "fichier d'animation 1ere personne non trouvé : " + $sPathAnim
+				let sPathAnim := "Characters\_Male\IdleAnims\zebumper\Ingestibles\Anim1stPOV\SpecialIdle_Whiskey.kf"
+			endif
+			let sPath := "meshes\" + sPathObj
+			if fileExists $sPath == 0
+				printD "fichier d'objet 1ere personne non trouvé : " + $sPathObj
+				let sPathObj := "zebumper\Ingestibles\1stPOV\FoodWeaponWhiskey.nif"
+			endif
+			let sPath := "meshes\" + sPathAcc
+			if fileExists $sPath == 0
+				printD "fichier d'acc 1ere personne non trouvé : " + $sPathAcc
+				let sPathAcc := "zebumper\Ingestibles\1stPOV\acc\FoodWeaponWhiskey.nif"
+			endif
+
+			setIdleAnimPath animZebumperIngGenericFirst $sPathAnim
+
+			let sPathObj := "IngestibleObj|" + $sPathObj
+			let sPathAcc := "IngestibleAcc|" + $sPathAcc
+
+			set qstZebumperIngAnimationList.iHand to iHand
+			set qstZebumperIngAnimationList.iHandAcc to iHandAcc
+			set qstZebumperIngAnimationList.iTimerObjHide to iTimerObjHide
+			set qstZebumperIngAnimationList.iTimerObjHideAcc to iTimerObjHideAcc
+			set qstZebumperIngAnimationList.iTimerObjShow to iTimerObjShow
+			set qstZebumperIngAnimationList.iTimerObjShowAcc to iTimerObjShowAcc
+			let qstZebumperIngAnimationList.sPathObj := $sPathObj
+			let qstZebumperIngAnimationList.sPathObjAcc := $sPathAcc
+
+		endif
+
+		set fStep to 5
+	
+	elseif fStep == 5
+
+		; longer animations options (when sit)
+		if eval qstZebumperIngMCM.bLongerAnimations == 1 && iType < 11 && iPosition != 0
+			set iTimer3rd to 0
+			set qstZebumperIngAnimationList.bPlayLonger to 1
+		endif
+
+		; makes read book animation play longer (even if longer anim option is OFF)
+		set bForceLonger to 0
+		if eval iType == 26 && qstZebumperIngMCM.bWorkForType26 == 1
+			set bForceLonger to 1
+		elseif eval iType == 27 && qstZebumperIngMCM.bWorkForType27 == 1
+			set bForceLonger to 1
+		endif
+
+		if bForceLonger == 1
+			set iTimer3rd to 0
+			set qstZebumperIngAnimationList.bPlayLonger to 1
+			if qstZebumperIngMCM.bLongAnimationsForBooks == 1
+				setIdleLoopTimes animZebumperIngGeneric 14 30
+			else
+				setIdleLoopTimes animZebumperIngGeneric 4 7
+			endif
+		else
+			setIdleLoopTimes animZebumperIngGeneric 0 0
+		endif
+
+		set qstZebumperIngAnimationList.iTimer to iTimer
+		set qstZebumperIngAnimationList.iTimer3rd to iTimer3rd
+
+		; manage super short hitman animations to make them longer
+		if eval iAnimationFirst == 15 || iAnimationFirst == 16
+			set qstZebumperIngAnimationList.bLongAnimTrick to 1
+		endif
+
+		; manage accessories
+		if iAcc != 0
+			; 1.a on enregistre le chemin de l'animObject de base
+			let sPath := getModelPath rAnimObjectBaseForm
+			printD "ACC path animObj: " + $sPath
+
+			; 1.b on copie le chemin de base vers l'animObj Acc.
+			set rAnimObjectBaseForm to aoZebumperIngAccMain
+			setModelPathEx $sPath rAnimObjectBaseForm
+
+			; 2.a on enregistre le chemin de l'idle de base
+			let sPath := getIdleAnimPath animZebumperIngGeneric 
+			printD "ACC path idle: " + $sPath
+
+			; 2.b on copie le chemin de l'idle de base vers l'idle Acc.
+			setIdleAnimPath animZebumperIngGenericAcc $sPath
+		endif
+
+		if getDebugMode == 1
+			let sPath := getIdleAnimPath animZebumperIngGeneric
+			printD "chemin animation : " + $sPath
+			let sPath := getModelPath rAnimObjectBaseForm
+			printD "chemin objet : " + $sPath
+
+			let sPath := getIdleAnimPath animZebumperIngGenericFirst
+			printD "chemin animation first : " + $sPath
+		endif
+
+		set qstZebumperIngAnimationList.fStep to 1	; débloque
+		set fStep to -2	; stop
+
+	endif
+
+END 

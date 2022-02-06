@@ -1,0 +1,131 @@
+scn scrZebumperIngOnUseAidItem
+
+ref rEater
+ref rEated
+int iExcludeControl
+int iNoAnimationControl
+string_var sPath
+short bFoodRow 
+short bChemsRow
+short bMiscsRow
+
+BEGIN function {rEated}
+
+	printD "========== ANIMATED INGESTIBLES =========="
+	printD "On use aid item launched"
+
+	if getINIFloat "Functions:iIsStopped" "zebumper\AnimatedIngestiblesTechnical.ini" > 0
+		if getINIFloat "Functions:iIsStopped" "zebumper\AnimatedIngestiblesTechnical.ini" == 2
+			setINIFloat "Functions:iIsStopped" 0 "zebumper\AnimatedIngestiblesTechnical.ini"
+		endif
+		RETURN
+	endif
+
+	; check if skillbook (if yes, manually set rEater to player)
+	if qstZebumperIngMCM.bDontCheckIfPlayer == 0
+		set rEater to this
+	else
+		set rEater to player
+		set qstZebumperIngMCM.bDontCheckIfPlayer to 0
+	endif
+
+	set iExcludeControl to qstZebumperIngMCM.iExcludeControl
+	set iNoAnimationControl to qstZebumperIngMCM.iNoAnimKey
+
+	if rEater.getIsReference player != 1
+		printD "pas le joueur"
+		RETURN
+	elseif eval getQuestRunning qstZebumperIngAnimationList && qstZebumperIngMCM.iAnimRowUnique == 1 && qstZebumperIngAnimationList.fStep == 4
+		printD "une seule anim pour tout !"
+		RETURN
+	endif
+
+	let sPath := getModelPath rEated
+	if eval sPath != ""
+		printD "cet objet dispose d'un modèle 3D"
+		sv_destruct sPath
+	else
+		printD "pas de modèle 3D"
+		sv_destruct sPath
+		listRemoveForm listZebumperIngAll rEated
+		RETURN
+	endif
+
+	if eval isControlPressed iNoAnimationControl && iNoAnimationControl != 0
+		RETURN
+	endif
+
+	if eval isControlPressed iExcludeControl && iExcludeControl != 0
+		if isRefInList listZebumperIngExclusions rEated != -1
+			messageEx "Item removed from Exclusion List."
+			printD "objet déja exclu ! A nouveau accepté"
+			listRemoveForm listZebumperIngExclusions rEated
+		else
+			messageEX "Item added to Exclusion List."
+			printD "objet exclu de la liste"
+			addFormtoFormList listZebumperIngExclusions rEated
+		endif
+	endif
+
+	if isRefInList listZebumperIngExclusions rEated != -1
+		RETURN
+	endif
+
+	; test if the same exact item is already in the list, then if one per type or only one is on
+	; in that case, the animation won't repeat for this item for sure, so we can skip all the process
+	set bFoodRow to 1
+	set bChemsRow to 1
+	set bMiscsRow to 1
+
+	if eval qstZebumperIngMCM.bFoodDrinkEnabled == 1 && qstZebumperIngMCM.iAnimRowFood == 0
+		set bFoodRow to 0
+	endif
+
+	if eval qstZebumperIngMCM.bWorkForChems == 1 && qstZebumperIngMCM.iAnimRowChems == 0
+		set bChemsRow to 0
+	endif
+
+	if eval qstZebumperIngMCM.bWorkForMiscs == 1 && qstZebumperIngMCM.iAnimRowMiscs == 0
+		set bMiscsRow to 0
+	endif
+
+	; if no option allow for repeating animation for same items, skip
+	if eval isRefInList listZebumperIngAnimationRow rEated != -1 && ( bFoodRow * bChemsRow * bMiscsRow ) == 1
+		printD "Not this one, baby"
+		RETURN
+	endif
+
+	; adding item to the list
+	if listGetCount listZebumperIngAnimationRow < qstZebumperIngMCM.iMaxAnim
+		listAddForm listZebumperIngAnimationRow rEated
+	else
+		printD "liste d'animation pleine"
+		RETURN
+	endif
+
+	printD $rEated + " ajouté à la liste"
+
+	if getQuestRunning qstZebumperIngAnimationList == 0
+		startQuest qstZebumperIngAnimationList
+		printD "startquest"
+	endif
+
+	; delay trubo
+	if eval qstZebumperIngMCM.bWorkForType17 != 0 && qstZebumperIngAnimationList.bTurboUsed == 0
+		if eval qstZebumperIngMCM.bWorkForType17 == 2 || rEated == NVTurbo
+			set iExcludeControl to getNumEffects rEated
+			set iNoAnimationControl to 0
+			while iNoAnimationControl < iExcludeControl
+				if getNthEffectBase rEated iNoAnimationControl == TurboEffect
+					player.dispel rEated
+					set qstZebumperIngAnimationList.bTurboUsed to 1
+					set qstZebumperIngAnimationList.rWhatIsTurbo to rEated
+					BREAK
+				else
+					set iNoAnimationControl to iNoAnimationControl + 1
+				endif
+			loop
+		endif
+	endif
+
+END 

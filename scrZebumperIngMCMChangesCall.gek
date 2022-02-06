@@ -1,0 +1,101 @@
+scn scrZebumperIngMCMChangesCall
+
+int iModIndex
+
+BEGIN function {}
+
+	if qstZebumperIngMCM.bDebug == 1
+		setdebugMode 1
+	else
+		setdebugMode 0
+	endif
+
+	set qstZebumperIngMCM.iForcePOVMiscs to 2
+
+	if qstZebumperIngMCM.iExcludeControlMCM == 1
+		set qstZebumperIngMCM.iExcludeControl to 8
+	elseif qstZebumperIngMCM.iExcludeControlMCM == 2
+		set qstZebumperIngMCM.iExcludeControl to 7
+	elseif qstZebumperIngMCM.iExcludeControlMCM == 3
+		set qstZebumperIngMCM.iExcludeControl to 18
+	elseif qstZebumperIngMCM.iExcludeControlMCM == 4
+		set qstZebumperIngMCM.iExcludeControl to 13
+	elseif qstZebumperIngMCM.iExcludeControlMCM == 5
+		set qstZebumperIngMCM.iExcludeControl to 27
+	elseif qstZebumperIngMCM.iExcludeControlMCM == 6
+		set qstZebumperIngMCM.iExcludeControl to 15
+	else
+		set qstZebumperIngMCM.iExcludeControl to 0
+	endif
+
+	if qstZebumperIngMCM.iNoAnimKeyMCM == 1
+		set qstZebumperIngMCM.iNoAnimKey to 8
+	elseif qstZebumperIngMCM.iNoAnimKeyMCM == 2
+		set qstZebumperIngMCM.iNoAnimKey to 7
+	elseif qstZebumperIngMCM.iNoAnimKeyMCM == 3
+		set qstZebumperIngMCM.iNoAnimKey to 18
+	elseif qstZebumperIngMCM.iNoAnimKeyMCM == 4
+		set qstZebumperIngMCM.iNoAnimKey to 13
+	elseif qstZebumperIngMCM.iNoAnimKeyMCM == 5
+		set qstZebumperIngMCM.iNoAnimKey to 27
+	elseif qstZebumperIngMCM.iNoAnimKeyMCM == 6
+		set qstZebumperIngMCM.iNoAnimKey to 15
+	else
+		set qstZebumperIngMCM.iNoAnimKey to 0
+	endif
+
+	if qstZebumperIngMCM.iCancelControlMCM == 1	; grab
+		set qstZebumperIngMCM.iCancelControl to 27
+	elseif qstZebumperIngMCM.iCancelControlMCM == 2	; attack
+		set qstZebumperIngMCM.iCancelControl to 4
+	else
+		set qstZebumperIngMCM.iCancelControl to 15	; wait (disabled)
+	endif
+
+	; JG managment
+	if eval isPluginInstalled "JohnnyGuitarNVSE" && getJohnnyPatch 1
+		set qstZebumperIngMCM.bUseJohnny to 1
+	else
+		set qstZebumperIngMCM.bUseJohnny to 0
+	endif
+
+	if qstZebumperIngMCM.bEmptyList == 1
+		set qstZebumperIngMCM.bEmptyList to 0
+		listClear listZebumperIngExclusions
+	endif
+
+	set iModIndex to qstZebumperIngMCM.iMK2Managment
+	if eval fileExists "zebumper\Animated Ingestibles - Perfect MKII.ImHere" == 0 && iModIndex > 1
+		set iModIndex to 1
+	elseif eval fileExists "zebumper\Animated Ingestibles - Perfect MKII.ImHere" >= 1 && iModIndex == 0
+		set iModIndex to 3
+	endif
+	setINIFloat "Animated Ingestibles:iMK2Managment" iModIndex "zebumper\zebumper's cross mods config.ini"
+
+	if qstZebumperIngMCM.bNoVanillasounds == 1
+		setSoundSourceFile NPCHumanDrinkingNukaCola "fx\ui\items\generic\up\"
+		setSoundSourceFile NPCHumanDrinkingSoda "fx\ui\items\generic\up\"
+		setSoundSourceFile NPCHumanEatingFoodChewy "fx\ui\items\generic\up\"
+		setSoundSourceFile NPCHumanEatingFoodCrunchy "fx\ui\items\generic\up\"
+		setSoundSourceFile NPCHumanEatingMentats "fx\ui\items\generic\up\"
+		setSoundSourceFile NPCHumanUsingJet "fx\ui\items\generic\up\"
+		setSoundSourceFile NPCHumanUsingMorphine "fx\ui\items\generic\up\"
+		setSoundSourceFile NPCHumanUsingPsycho "fx\ui\items\generic\up\"
+		setSoundSourceFile NPCHumanUsingRadaway "fx\ui\items\generic\up\"
+		setSoundSourceFile NPCHumanUsingRadX "fx\ui\items\generic\up\"
+		setSoundSourceFile NPCHumanUsingStimpak "fx\ui\items\generic\up\"
+	endif
+
+	if eval qstZebumperIngMCM.bWorkForMiscs == 1 && qstZebumperIngMCM.bWorkForType26 == 1
+		setEventHandler "onActorEquip" scrZebumperIngOnUseBookItem "first"::playerRef "second"::listZebumperIngAllBooks
+	else
+		removeEventHandler "onActorEquip" scrZebumperIngOnUseBookItem
+	endif
+
+	if qstZebumperIngMCM.bAutoLoadSave == 1
+		set iModIndex to 2
+		call scrZebumperIngMCMLoadOrSaveCall {iModIndex}
+	endif
+	set qstZebumperIngMCM.iLoadOrSave to 0
+
+END ;

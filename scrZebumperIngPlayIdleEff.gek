@@ -1,0 +1,21 @@
+scn scrZebumperIngPlayIdleEff
+
+BEGIN scriptEffectStart
+
+	if qstZebumperIngAnimationList.fStep == 6
+		playIdleEx animZebumperIngReset
+	else
+		if isPC1stPerson == 1
+			playIdleEX animZebumperIngGenericFirst
+		else
+			if qstZebumperIngAnimationList.iAcc == 0
+				printD "sans accessoire"
+				playIdleEX animZebumperIngGeneric
+			else
+				printD "avec accessoire"
+				playIdleEx animZebumperIngGenericAcc
+			endif
+		endif
+	endif
+
+END 

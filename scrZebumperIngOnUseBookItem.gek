@@ -1,0 +1,11 @@
+scn scrZebumperIngOnUseBookItem
+
+ref rEquipper
+ref rEquipped
+
+BEGIN function {rEquipper, rEquipped}
+	printD "========== ANIMATED INGESTIBLES =========="
+	printD "On Equip (skill book)"
+	set qstZebumperIngMCM.bDontCheckIfPlayer to 1	; avoid a critical part in next script
+	call scrZebumperIngOnUseAidItem {rEquipped}
+END

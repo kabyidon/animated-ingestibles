@@ -1,0 +1,183 @@
+scn scrZebumperIngMCMNewValueCall
+
+int iSubMenu
+int iOption
+float fValue
+
+BEGIN function {iSubMenu, iOption, fValue}
+
+	if iSubMenu == 1
+		if iOption == 3
+			set qstZebumperIngMCM.iAnimRowUnique to fValue
+		elseif iOption == 5
+			set qstZebumperIngMCM.iCancelPenalty to fValue - 1
+		elseif iOption == 7
+			set qstZebumperIngMCM.iFasterAndFurious to fValue
+		elseif iOption == 11
+			set qstZebumperIngMCM.iSounds to fValue - 1
+		elseif iOption == 13
+			set qstZebumperIngMCM.bNoVanillaSounds to fValue
+		elseif iOption == 15
+			set qstZebumperIngMCM.bHideCrosshair to fValue
+		elseif iOption == 17
+			set qstZebumperIngMCM.iWildWastelandTweaks to fValue
+;		elseif iOption == 17
+;			set qstZebumperIngMCM.iWildWastelandTweaks to fValue - 1
+		elseif iOption == 19
+			set qstZebumperIngMCM.bDisableAcc to fValue
+		elseif iOption == 25
+			set qstZebumperIngMCM.iLoadOrSave to fValue - 1
+			if qstZebumperIngMCM.iLoadOrSave == 3
+				; AUTO
+				if qstZebumperIngMCM.bAutoLoadSave == 0
+					set qstZebumperIngMCM.bAutoLoadSave to 1
+					setINIFloat "AUTOLOADSAVE:bAutoLoadSave" 1 "zebumper\AnimatedIngestiblesSettings.ini"
+;					set qstZebumperIngMCM.iLoadOrSave to 2	; save
+;					call scrZebumperIngMCMLoadOrSaveCall {iLoadOrSave}
+				else
+					set qstZebumperIngMCM.bAutoLoadSave to 0
+					setINIFloat "AUTOLOADSAVE:bAutoLoadSave" 0 "zebumper\AnimatedIngestiblesSettings.ini"
+				endif
+			elseif qstZebumperIngMCM.iLoadOrSave != 0
+				call scrZebumperIngMCMLoadOrSaveCall {qstZebumperIngMCM.iLoadOrSave}
+			endif
+		elseif iOption == 27
+			setINIFloat "Functions:iIsStopped" -2 "zebumper\AnimatedIngestiblesTechnical.ini"
+		elseif iOption == 4
+			set qstZebumperIngMCM.iNoAnimKeyMCM to fValue - 1
+		elseif iOption == 6
+			set qstZebumperIngMCM.iExcludeControlMCM to fValue -1
+		elseif iOption == 8
+			set qstZebumperIngMCM.iCancelControlMCM to fValue - 1
+		elseif iOption == 12
+			set qstZebumperIngMCM.bDisableULGourmandTweaks to fValue
+		elseif iOption == 24
+			set qstZebumperIngMCM.bWriteINICustom to fValue
+		elseif iOption == 26
+			set qstZebumperIngMCM.bEmptyList to fValue - 1
+		elseif iOption == 28
+			set qstZebumperIngMCM.bDebug to fValue
+		elseif iOption == 30
+			set fValue to getNVSEVersionFull
+			set qstZebumperIngMCM.fTemp to getPluginVersion "JIP NVSE Plugin"
+			if eval fValue != qstZebumperIngMCM.fxNVSEVersion || qstZebumperIngMCM.fTemp != qstZebumperIngMCM.fJIPVersion
+				messageBoxEx "This version of the mod was created using 'xNVSE' version %.2f and 'JIP LN NVSE' version %.2f. Any older (but sometimes also newer) version of these plugins can cause issues.%r%rVersions currently installed:%rxNVSE %.2f%rJIP %.2f" qstZebumperIngMCM.fxNVSEVersion, qstZebumperIngMCM.fJIPVersion, fValue, qstZebumperIngMCM.fTemp
+			else
+				messageBoxEx "This version of the mod was created using 'xNVSE' version %.2f and 'JIP LN NVSE' version %.2f. These versions appear to be the ones you are currently using." qstZebumperIngMCM.fxNVSEVersion, qstZebumperIngMCM.fJIPVersion
+			endif
+
+		endif
+
+	elseif iSubMenu == 2			
+		if iOption == 1
+			set qstZebumperIngMCM.bFoodDrinkEnabled to fValue
+		elseif iOption == 3
+			set qstZebumperIngMCM.iAnimRowFood to fValue - 1
+		elseif iOption == 5
+			set qstZebumperIngMCM.bWork1POV to fValue
+		elseif iOption == 7
+			set qstZebumperIngMCM.bWork3POV to fValue
+		elseif iOption == 9
+			set qstZebumperIngMCM.iForcePOV to fValue - 1
+		elseif iOption == 11
+			set qstZebumperIngMCM.bWorkCombat to fValue
+		elseif iOption == 15
+			set qstZebumperIngMCM.bEatSitBonus to fValue
+		elseif iOption == 17
+			set qstZebumperIngMCM.bLongerAnimations to fValue
+		elseif iOption == 19
+			set qstZebumperIngMCM.iTimeScaleVar to fValue
+		elseif iOption == 21
+			set qstZebumperIngMCM.iCanteen13Animation to fValue - 1
+		elseif iOption == 4
+			set qstZebumperIngMCM.bWorkForType0 to fValue - 1
+		elseif iOption == 6
+			set qstZebumperIngMCM.bWorkForType1 to fValue - 1
+		elseif iOption == 8
+			set qstZebumperIngMCM.bWorkForType2 to fValue - 1
+		elseif iOption == 10
+			set qstZebumperIngMCM.bWorkForType3 to fValue - 1
+		elseif iOption == 12
+			set qstZebumperIngMCM.bWorkForType4 to fValue - 1
+		elseif iOption == 14
+			set qstZebumperIngMCM.bWorkForType5 to fValue - 1
+		elseif iOption == 16
+			set qstZebumperIngMCM.bWorkForType6 to fValue - 1
+		elseif iOption == 18
+			set qstZebumperIngMCM.bWorkForType7 to fValue - 1
+		elseif iOption == 20
+			set qstZebumperIngMCM.bWorkForType8 to fValue - 1
+		endif
+
+	elseif iSubMenu == 3
+		if iOption == 1
+			set qstZebumperIngMCM.bWorkForChems to fValue
+		elseif iOption == 3
+			set qstZebumperIngMCM.iAnimRowChems to fValue - 1
+		elseif iOption == 5
+			set qstZebumperIngMCM.bWork1POVChems to fValue
+		elseif iOption == 7
+			set qstZebumperIngMCM.bWork3POVChems to fValue
+		elseif iOption == 9
+			set qstZebumperIngMCM.iForcePOVChems to fValue -1
+		elseif iOption == 11
+			set qstZebumperIngMCM.bWorkCombatChems to fValue
+		elseif iOption == 15
+			set qstZebumperIngMCM.bPAAutoInject to fValue
+		elseif iOption == 17
+			set qstZebumperIngMCM.iMK2Managment to fValue - 1
+		elseif iOption == 4
+			set qstZebumperIngMCM.bWorkForType11 to fValue
+		elseif iOption == 6
+			set qstZebumperIngMCM.bWorkForType12 to fValue
+		elseif iOption == 8
+			set qstZebumperIngMCM.bWorkForType13 to fValue
+		elseif iOption == 10
+			set qstZebumperIngMCM.bWorkForType14 to fValue
+		elseif iOption == 12
+			set qstZebumperIngMCM.bWorkForType15 to fValue
+		elseif iOption == 14
+			set qstZebumperIngMCM.bWorkForType16 to fValue
+		elseif iOption == 16
+			set qstZebumperIngMCM.bWorkForType17 to fValue - 1
+		elseif iOption == 18
+			set qstZebumperIngMCM.bWorkForType18 to fValue
+		elseif iOption == 20
+			set qstZebumperIngMCM.bWorkForType19 to fValue
+		elseif iOption == 22
+			set qstZebumperIngMCM.bWorkForType20 to fValue
+		elseif iOption == 24
+			set qstZebumperIngMCM.bWorkForType21 to fValue
+		elseif iOption == 26
+			set qstZebumperIngMCM.bWorkForType22 to fValue
+		endif
+
+	elseif iSubMenu == 4
+		if iOption == 1
+			set qstZebumperIngMCM.bWorkForMiscs to fValue
+		elseif iOption == 3
+			set qstZebumperIngMCM.iAnimRowMiscs to fValue - 1
+		elseif iOption == 5
+			set qstZebumperIngMCM.bWork1POVMiscs to fValue
+		elseif iOption == 7
+			set qstZebumperIngMCM.bWork3POVMiscs to fValue
+		elseif iOption == 9
+			set qstZebumperIngMCM.iForcePOVMiscs to fValue -1
+		elseif iOption == 11
+			set qstZebumperIngMCM.bWorkCombatMiscs to fValue
+		elseif iOption == 15
+			set qstZebumperIngMCM.bLongAnimationsForBooks to fValue
+		elseif iOption == 4
+			set qstZebumperIngMCM.bWorkForType25 to fValue - 1
+		elseif iOption == 6
+			set qstZebumperIngMCM.bWorkForType26 to fValue
+		elseif iOption == 8
+			set qstZebumperIngMCM.bWorkForType27 to fValue
+		endif				
+
+	endif
+
+	setINIFloat "Animated Ingestibles:iMK2Managment" qstZebumperIngMCM.iMK2Managment "zebumper\zebumper's cross mods config.ini"
+	call scrZebumperIngMCMChangesCall {}
+
+END

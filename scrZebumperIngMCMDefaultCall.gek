@@ -1,0 +1,94 @@
+scn scrZebumperIngMCMDefaultCall
+
+int iSubMenu
+
+BEGIN function {iSubMenu}
+
+	if eval iSubMenu == 1 || iSubMenu == 0
+		set qstZebumperIngMCM.iAnimRowUnique to 0		; (0=rien, 1=une seule anim dope+nourr+boisson, 2=une seule anim totale)
+		set qstZebumperIngMCM.iNoAnimKeyMCM to 0
+		set qstZebumperIngMCM.iMaxAnim to 32
+		set qstZebumperIngMCM.iExcludeControlMCM to 0
+		set qstZebumperIngMCM.iCancelControlMCM to 1
+		set qstZebumperIngMCM.bWriteINICustom to 0
+		set qstZebumperIngMCM.iCancelPenalty to 0
+		set qstZebumperIngMCM.bDebug to 0
+		set qstZebumperIngMCM.bEmptyList to 0
+		set qstZebumperIngMCM.iSounds to 2
+		set qstZebumperIngMCM.bNoVanillaSounds to 0
+		set qstZebumperIngMCM.bHideCrosshair to 0
+		set qstZebumperIngMCM.iWildWastelandTweaks to 1
+		set qstZebumperIngMCM.bDisableAcc to 0
+		set qstZebumperIngMCM.iFasterAndFurious to 75
+
+		if isModLoaded "Lively Gourmand.esp"
+			set qstZebumperIngMCM.bDisableULGourmandTweaks to 1
+		else
+			set qstZebumperIngMCM.bDisableULGourmandTweaks to 0
+		endif
+
+	endif
+
+	if eval iSubMenu == 2 || iSubMenu == 0
+		set qstZebumperIngMCM.bFoodDrinkEnabled to 1
+		set qstZebumperIngMCM.iAnimRowFood to 1
+		set qstZebumperIngMCM.bWork1POV to 1
+		set qstZebumperIngMCM.bWork3POV to 1
+		set qstZebumperIngMCM.bWorkCombat to 1
+		set qstZebumperIngMCM.bEatSitBonus to 1
+		set qstZebumperIngMCM.iForcePOV to 0
+		set qstZebumperIngMCM.iTimeScaleVar to 0
+		set qstZebumperIngMCM.bLongerAnimations to 0
+		set qstZebumperIngMCM.iCanteen13Animation to 2
+		set qstZebumperIngMCM.bWorkForType0 to 1
+		set qstZebumperIngMCM.bWorkForType1 to 1
+		set qstZebumperIngMCM.bWorkForType2 to 1
+		set qstZebumperIngMCM.bWorkForType3 to 1
+		set qstZebumperIngMCM.bWorkForType4 to 1
+		set qstZebumperIngMCM.bWorkForType5 to 1
+		set qstZebumperIngMCM.bWorkForType6 to 0
+		set qstZebumperIngMCM.bWorkForType7 to 0
+		set qstZebumperIngMCM.bWorkForType8 to 0
+	endif
+
+	if eval iSubMenu == 3 || iSubMenu == 0
+		set qstZebumperIngMCM.bWorkForChems to 1
+		set qstZebumperIngMCM.iAnimRowChems to 1
+		set qstZebumperIngMCM.bWork1POVChems to 1
+		set qstZebumperIngMCM.bWork3POVChems to 1
+		set qstZebumperIngMCM.bWorkCombatChems to 1
+		set qstZebumperIngMCM.bPAAutoInject to 1
+		set qstZebumperIngMCM.iMK2Managment to 1
+		set qstZebumperIngMCM.iForcePOVChems to 0
+		set qstZebumperIngMCM.bWorkForType11 to 1
+		set qstZebumperIngMCM.bWorkForType12 to 1
+		set qstZebumperIngMCM.bWorkForType13 to 1
+		set qstZebumperIngMCM.bWorkForType14 to 1
+		set qstZebumperIngMCM.bWorkForType15 to 1
+		set qstZebumperIngMCM.bWorkForType16 to 1
+		set qstZebumperIngMCM.bWorkForType17 to 0
+		set qstZebumperIngMCM.bWorkForType18 to 1
+		set qstZebumperIngMCM.bWorkForType19 to 1
+		set qstZebumperIngMCM.bWorkForType20 to 1
+		set qstZebumperIngMCM.bWorkForType21 to 1
+		set qstZebumperIngMCM.bWorkForType22 to 0
+	endif
+
+	if eval iSubMenu == 4 || iSubMenu == 0
+		set qstZebumperIngMCM.bWorkForMiscs to 0
+		set qstZebumperIngMCM.iAnimRowMiscs to 1
+		set qstZebumperIngMCM.bWork1POVMiscs to 1
+		set qstZebumperIngMCM.bWork3POVMiscs to 1
+		set qstZebumperIngMCM.bWorkCombatMiscs to 0
+		set qstZebumperIngMCM.bLongAnimationsForBooks to 0
+		set qstZebumperIngMCM.iForcePOVMiscs to 0
+		set qstZebumperIngMCM.bWorkForType25 to 1
+		set qstZebumperIngMCM.bWorkForType26 to 1
+		set qstZebumperIngMCM.bWorkForType27 to 1
+	endif
+
+	if iSubMenu != 0	; only call changes if it's not the first start of the mod
+		call scrZebumperIngMCMChangesCall {}
+	endif
+
+END

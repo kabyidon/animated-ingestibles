@@ -1,0 +1,118 @@
+scn scrZebumperIngMCMMouseOverCall
+
+int iSubMenu
+int iMouseOver
+
+BEGIN function {iSubMenu, iMouseOver}
+
+	if iSubMenu == 1
+		if iMouseOver == 3
+			SetUIString "StartMenu/MCM/*:9/string" "Use this option if you only want to see a single animation, regardless of the type and number of elements consumed at a time. This will prevent you from configuring the animation grouping option."
+		elseif iMouseOver == 5
+			SetUIString "StartMenu/MCM/*:9/string" "Enables or disables a player penalty for interrupting animation. This penalty varies depending on the object being animated. An animation is interrupted when the Cancel Control is pressed."
+		elseif iMouseOver == 7
+			SetUIString "StartMenu/MCM/*:9/string" "Allows you to use 50% faster animation in combat. The value chosen is the skill required to trigger these animations (Survival for food and drinks, Medicine for chems). Function disabled if 0."		
+		elseif iMouseOver == 11
+			SetUIString "StartMenu/MCM/*:9/string" "Enables or disables sounds, mostly for 1st POV animation."
+		elseif iMouseOver == 13
+			SetUIString "StartMenu/MCM/*:9/string" "Modifies vanilla sounds of consumed items to avoid repetitions with the mod sounds. Disabling this option will require a game restart.
+"
+		elseif iMouseOver == 15 && isModLoaded "oHud.esm"
+			SetUIString "StartMenu/MCM/*:9/string" "Makes the crosshair invisible for the duration of the animation. Could be incompatible and/or non-functional with mods such as 'oHUD' (the latter seems to be installed)."
+		elseif iMouseover == 15
+			SetUIString "StartMenu/MCM/*:9/string" "Makes the crosshair invisible for the duration of the animation. Could be incompatible and/or non-functional with mods such as 'oHUD'."
+		elseif iMouseover == 17
+			SetUIString "StartMenu/MCM/*:9/string" "Little surprises if you have the 'Wild Wastedland' trait when consuming some items... At the moment, this option does almost nothing."
+		elseif iMouseover == 19
+			SetUIString "StartMenu/MCM/*:9/string" "Disable 'accessory' animation elements during 1st POV animations, such as capsules on Nuka-Cola bottles. Use this option if you notice graphics problems."
+		elseif iMouseover == 25
+			SetUIString "StartMenu/MCM/*:9/string" "Allows you to load or save the current settings via an INI file, or to activate the automatic loading and saving of the settings at each modification."
+		elseif iMouseOver == 4
+			SetUIString "StartMenu/MCM/*:9/string" "Choose a control which, held down when ingesting an object, will avoids the animation intended to play for this time."
+		elseif iMouseOver == 6
+			SetUIString "StartMenu/MCM/*:9/string" "Choose a control that, held down while ingesting an item, puts that item in your personal list of items excluded from mod. If you use this on an already excluded element, it will be reinstated and the intended animation will play."
+		elseif iMouseOver == 8
+			SetUIString "StartMenu/MCM/*:9/string" "Choose a control that will cancel the current animation and move on to the next one."
+		elseif iMouseOver == 12
+			SetUIString "StartMenu/MCM/*:9/string" "By default, 'table' animations are replaced by 'chairs' animation in the Gourmand at the Ultra Luxe because tables there are too low. You can cancel this tweak here."
+		elseif iMouseOver == 24
+			SetUIString "StartMenu/MCM/*:9/string" "Enables the writing of ingestibles ID not supported by the mod in the personal INI file. This function is reserved for experienced users."
+		elseif iMouseOver == 26
+			SetUIString "StartMenu/MCM/*:9/string" "Click on this option to completely empty the list of objects personally excluded from the mod using the chosen exclusion/inclusion control. The number indicates the quantity of items present in the list."
+		elseif iMouseOver == 27
+			SetUIString "StartMenu/MCM/*:9/string" "Click on this option in order to try to stop the list of animations in case the mod is stucked. The current animation will still end playing. Use only as a last resort. "
+		elseif iMouseOver == 28
+			SetUIString "StartMenu/MCM/*:9/string" "Enabling this feature may slow down the game when consuming items. Do this only with full knowledge of the facts!"
+
+		else
+			SetUIFloat "StartMenu/MCM/MCM_Info/visible" 0
+		endif
+
+	elseif iMouseOver == 1
+		SetUIString "StartMenu/MCM/*:9/string" "Enables or disables the module entirely."
+	elseif iMouseOver == 3
+		SetUIString "StartMenu/MCM/*:9/string" "NONE: an animation will be played for each item consumed. ONE/TYPE: only one animation per type of element consumed. ONLY ONE: only one animation."
+	elseif iMouseOver == 5
+		SetUIString "StartMenu/MCM/*:9/string" "Turns on or off first person view animations."
+	elseif iMouseOver == 7
+		SetUIString "StartMenu/MCM/*:9/string" "Turns on or off third person view animations."
+	elseif iMouseOver == 9
+		SetUIString "StartMenu/MCM/*:9/string" "Force a POV change during animations."
+	elseif iMouseOver == 11
+		SetUIString "StartMenu/MCM/*:9/string" "Enables or disables animations in combat."
+	elseif iMouseOver == 2
+		SetUIString "StartMenu/MCM/*:9/string" "Enables or disables the animations according to the different types of elements."
+
+	elseif iSubMenu == 2
+
+		if iMouseOver == 10
+			SetUIString "StartMenu/MCM/*:9/string" "Consists of foods giving you the 'eat sitting' bonus such as cooked meals, meats and any other substantial food that massively restores hunger."
+		elseif iMouseOver == 12
+			SetUIString "StartMenu/MCM/*:9/string" "Groups smaller foods such as fruits, vegetables and plants. Generally, foods do little to restore hunger "
+		elseif iMouseOver == 15
+			SetUIString "StartMenu/MCM/*:9/string" "Enables or disables a bonus when consuming food while seated. Because the doctors say it's better for your health! Please note, only 'consistent' foods will give this bonus (Type 3). "
+		elseif iMouseOver == 17
+			SetUIString "StartMenu/MCM/*:9/string" "Enable or disable longer animations when using consumables while seated in 3rd POV. Take your time !"
+		elseif iMouseOver == 19
+			SetUIString "StartMenu/MCM/*:9/string" "Enables or disables Timescale variation when consuming food while seated. Only use this if you know what you are doing! A setting between 15 and 20 seems balanced. 0 to deactivate this function."
+		elseif iMouseOver == 21
+			SetUIString "StartMenu/MCM/*:9/string" "Enables or disables the animation when using the Vault 13 Canteen automatically. The animation also depends on the settings for 'Water' (type 0) items on this page."
+		elseif iMouseOver == 16 || iMouseOver == 18 || iMouseOver == 20
+			SetUIString "StartMenu/MCM/*:9/string" "Not used by the base mod, but could be used by other mods."
+		else
+			SetUIFloat "StartMenu/MCM/MCM_Info/visible" 0
+		endif
+
+	elseif iSubMenu == 3
+
+		if iMouseOver == 15
+			SetUIString "StartMenu/MCM/*:9/string" "Enables or disables non-animated chems consumption while wearing Power Armor, simulating self-injection."
+		elseif iMouseOver == 16
+			SetUIString "StartMenu/MCM/*:9/string" "The 'delay' option allows you to postpone the effects of any element with the 'Turbo' effect at the end of the appropriate animation. The effect of the vanilla Turbo is postponed no matter what, this option is made for other mods.
+"
+		elseif iMouseOver == 17
+			SetUIString "StartMenu/MCM/*:9/string" "Compatible: No animation for Stimpak and Med-X when wearing the MKII Suit (OWB). Perfect and Perfect YUP require the 'Animated Ingestibles - Perfect MKII' module. If this add-on is installed, this feature cannot be disabled."
+		elseif iMouseOver == 26
+			SetUIString "StartMenu/MCM/*:9/string" "Not used by the base mod, but could be used by other mods."
+		else
+			SetUIFloat "StartMenu/MCM/MCM_Info/visible" 0
+		endif
+
+	elseif iSubMenu == 4
+		if iMouseOver == 4
+			SetUIString "StartMenu/MCM/*:9/string" "The 'Open' setting allows you to use an open magazine 3D model (if existing), instead of the basic one. You will then have the pleasant impression of reading something other than the cover... Only for 3rd POV. "
+		elseif iMouseOver == 8
+			SetUIString "StartMenu/MCM/*:9/string" "Allows you to play an animation for any consumable using a generic book model (non-existent in the base game). This ensures compatibility with 'Autumn Leaves' or 'More Useful Books' mods. "
+		elseif iMouseOver == 15
+			SetUIString "StartMenu/MCM/*:9/string" "The book reading animation (Type 26 and Type 27) will last much longer."
+
+		else
+			SetUIFloat "StartMenu/MCM/MCM_Info/visible" 0
+		endif
+
+;	^^^^^^^^^^^^^^
+	else
+		SetUIFloat "StartMenu/MCM/MCM_Info/visible" 0
+	endif
+
+END

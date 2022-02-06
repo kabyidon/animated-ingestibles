@@ -1,0 +1,929 @@
+scn scrZebumperIngAnimationListQst
+
+; script de quête se lancant lorsqu'un objet est consommé
+; et tournant en boucle tant que la liste d'animation n'est pas vide.
+
+short bDoOnce
+short bDoOncePOVWeap
+short bDoOnceSound
+short bDoOnceWhenAnim
+short bMustStop
+short bOnPause
+short bWasInMenu
+short bWeaponWasOut
+short bBasePOV
+short bWasLaunchedIn3
+short bPlayLonger
+short bNope
+short bTurboUsed
+short bAnimLaunched
+short bActivateDisabled
+short bLongAnimTrick
+short bIsFaster
+short bIsFaster3rd
+
+int iPosition
+int iAcc
+int iType
+int iSound
+int iSoundFirst
+int iTimer
+int iTimer3rd
+int iTimerGeneral
+int iWhatForcedPOV
+int iCrosshairAlpha
+int iForcePOVBuild
+int iWildWastelandSurprise
+int iAnimRowOption
+int iDisabledFromPOV
+int iHand
+int iHandAcc
+int iTimerObjHide
+int iTimerObjHideAcc
+int iTimerObjShow
+int iTimerObjShowAcc
+int iValueMin
+int iValueMax
+
+float fTimer
+float fStep
+
+float fTransX
+float fTransY
+float fTransZ
+float fRotX
+float fRotY
+float fRotZ
+float fScale
+short bUseDirect
+
+ref rEated
+ref rWhatIsTurbo
+ref rCurrentWeapon
+ref rCurrentWeaponBase
+ref rArmor
+
+string_var sString
+string_var sSoundPath
+string_var sPathObj
+string_var sPathObjAcc
+
+BEGIN menuMode
+
+	if bWasInMenu == 0
+		set bWasInMenu to 1
+	endif
+
+	if eval bActivateDisabled == 1 && isControlDisabled 4
+		enableControl 4
+	endif
+
+END 
+
+BEGIN gameMode
+
+	if bWasInMenu == 1
+		set bWasInMenu to 0
+		if eval bActivateDisabled == 1 && isControlDisabled 4 == 0
+		 disableControl 4
+		endif
+		printD "scriptWait was in menu"
+	endif
+
+	if eval player.isAnimPlaying pipboy == 1 && player.isAnimPlayingEx 1 4 == 0
+;		printD "playing pipboy anim"
+		RETURN
+	elseif player.isAnimPlayingEx 1 4
+		scriptwait 3
+	endif
+
+	; DO ONCE
+	if bDoOnce == 0
+		printD "do once"
+		set bOnPause to 0
+		set rEated to 0
+		set bMustStop to 0
+		set fStep to 0
+		set rCurrentWeapon to 0
+		set rCurrentWeaponBase to 0
+		set bBasePOV to 0
+		set bWasLaunchedIn3 to 0
+		set bWeaponWasOut to 0
+		set bDoOncePOVWeap to 0
+		set iPosition to 0
+		set iTimer to 0
+		set iTimer3rd to 0
+		set iTimerGeneral to 0
+		set iHand to 0
+		set iHandAcc to 0
+		set iTimerObjHide to 0
+		set iTimerObjHideAcc to 0
+		set iTimerObjShow to 0
+		set iTimerObjShowAcc to 0
+		set bDoOnceSound to 0
+		set bDoOnceWhenAnim to 0
+		set bPlayLonger to 0
+		set iCrosshairAlpha to 0
+		set iForcePOVBuild to 0
+		set iWildWastelandSurprise to 0
+		set iAnimRowOption to 0
+		set bAnimLaunched to 0
+		set iDisabledFromPOV to 0
+		set bActivateDisabled to 0
+		set bLongAnimTrick to 0
+		set bIsFaster to 0
+		set bIsFaster3rd to 0
+		set fTransX to 0
+		set fTransY to 0
+		set fTransZ to 0
+		set fRotX to 0
+		set fRotY to 0
+		set fRotZ to 0
+		set fScale to 0
+		set bUseDirect to 0
+		removeINISection "InGame" "zebumper\AnimatedIngestiblesTechnical.ini"
+		set qstZebumperIngMCM.iTimeScaleBase to timescale
+		set bDoOnce to 1
+	endif
+
+	; ======================================
+	; 		EFFETS CONSTANTS
+	; ======================================
+	; ///// interruption
+	if bOnPause == 1
+
+		if getINIFloat "Functions:iIsStopped" "zebumper\AnimatedIngestiblesTechnical.ini" < 0
+			; avoid penalities
+			if getINIFloat "Functions:iIsStopped" "zebumper\AnimatedIngestiblesTechnical.ini" == -2
+				listClear listZebumperIngAnimationRow
+			endif
+			setINIFloat "Functions:iIsStopped" 0 "zebumper\AnimatedIngestiblesTechnical.ini"
+
+		elseif eval player.isInCombat || isPlayerSwimming || player.getKnockedState != 0
+			listClear listZebumperIngAnimationRow
+			if qstZebumperIngMCM.iCancelPenalty == 1 || qstZebumperIngMCM.iCancelPenalty == 3
+				player.CIOS aeZebumperIngInCombatCancel
+				printD "pause en combat"
+			endif
+
+		else	; <- stopped by the player, not in combat
+			if eval qstZebumperIngMCM.iCancelPenalty == 2 || qstZebumperIngMCM.iCancelPenalty == 3
+				if iType == 1	; boissons
+					if player.isHardcore == 1
+						player.damageAV Dehydration 50
+					endif
+					player.damageAV ActionPoints 5
+				elseif iType == 2	; alcools
+					player.CIOS aeZebumperIngRevertAlcool
+				elseif iType == 3
+					if player.isHardcore == 1
+						player.damageAV Hunger 50
+					endif
+					player.damageAV ActionPoints 5
+				elseif eval iType == 4 || iType == 5
+					if player.isHardcore == 1
+						player.damageAV Hunger 10
+						player.damageAV Dehydration 5
+					endif
+					player.damageAV ActionPoints 3
+				elseif iType == 11
+					player.damageAV Health 10
+				elseif iType == 13
+					player.damageAV ActionPoints 15
+				elseif iType == 14
+					player.CIOS aeZebumperIngRevertPsycho
+				elseif iType == 15
+					player.dispel NVReboundChem
+				elseif iType == 16
+					player.dispel NVSteadyChem
+				elseif iType == 18
+					player.dispel NVHydra
+				else
+					if player.isHardcore
+						player.damageAV SleepDeprevation 10
+					endif
+					player.damageAV ActionPoints 5 
+				endif
+			endif
+
+		endif
+
+		set bOnPause to 0
+
+	endif	; end of if bOnPause == 0
+
+	; ///// stop si la liste est vide
+	if listGetCount listZebumperIngAnimationRow < 1 || player.getDead == 1
+		listClear listZebumperIngAnimationRow
+		set bMustStop to 1
+		printD "liste vide, stoppe quete"
+	endif
+
+	; ======================================
+	; 		FIN D'ANIMATIONS
+	; ======================================	
+	if bMustStop == 1
+		set fStep to 6
+	endif
+
+	; ======================================
+	; 		STEP 0
+	; ======================================
+	; cette étape permet de vérifier l'existence d'une animation
+	; appropriée à l'objet consommé.
+
+	if fStep == 0
+		printD "fStep 0"
+
+		if eval player.getSitting != 0 && player.getSitting != 3
+			RETURN
+		endif
+
+		; ///// select the top list item
+		set rEated to listGetNthForm listZebumperIngAnimationRow 0
+		printD "item en cours d'animation: " + $rEated
+
+		; ///// exclude MK2
+		if eval qstZebumperIngMCM.iMK2Managment == 1 && isRefInList listZebumperIngMK2Suit rEated != -1
+			set rArmor to player.getEquippedObject 2
+			if isRefInList listZebumperIngMK2Suit rArmor != -1
+				printD "armure auto injection"
+				listRemoveNth listZebumperIngAnimationRow 0
+				RETURN
+			endif
+		endif
+
+		; ///// build quest
+		if getQuestRunning qstZebumperIngBuildModels == 0	; <- wait for build quest to be stopped
+			set fStep to 666	; <- avoid step 0 to repeat (fStep will be set to 1 in the build quest)
+			startQuest qstZebumperIngBuildModels
+		endif
+
+	; ======================================
+	; 		STEP 1
+	; ======================================
+	elseif fStep == 1
+	printD "step 1"
+
+		; ///// NOPE
+		set bNope to 0
+
+		; disabled from a certain POV in the INI
+		if eval isPC1stPerson && iDisabledFromPOV == 1
+			set bNope to 1
+		elseif eval isPC1stPerson == 0 && iDisabledFromPOV == 3
+			set bNope to 1
+		endif
+
+		; ///// if general modules are disabled
+		if eval iType < 11 && qstZebumperIngMCM.bFoodDrinkEnabled == 0
+			set bNope to 1
+		elseif eval iType >= 11 && iType < 25 && qstZebumperIngMCM.bWorkForChems == 0
+			set bNope to 1
+		elseif eval iType >= 25 && qstZebumperIngMCM.bWorkForMiscs == 0
+			set bNope to 1
+		endif
+
+		printD "NOPE 1"
+		; ///// if type is enabled
+		if bNope == 0
+			if eval iType == 0 && qstZebumperIngMCM.bWorkForType0 >= 1
+				if eval qstZebumperIngMCM.bWorkForType0 == 2 && player.getSitting != 3
+					set bNope to 1
+				endif
+			elseif eval iType == 1 && qstZebumperIngMCM.bWorkForType1 >= 1
+				if eval qstZebumperIngMCM.bWorkForType1 == 2 && player.getSitting != 3
+					set bNope to 1
+				endif
+			elseif eval iType == 2 && qstZebumperIngMCM.bWorkForType2 >= 1
+				if eval qstZebumperIngMCM.bWorkForType2 == 2 && player.getSitting != 3
+					set bNope to 1
+				endif
+			elseif eval iType == 3 && qstZebumperIngMCM.bWorkForType3 >= 1
+				if eval qstZebumperIngMCM.bWorkForType3 == 2 && player.getSitting != 3
+					set bNope to 1
+				endif
+			elseif eval iType == 4 && qstZebumperIngMCM.bWorkForType4 >= 1
+				if eval qstZebumperIngMCM.bWorkForType4 == 2 && player.getSitting != 3
+					set bNope to 1
+				endif
+			elseif eval iType == 5 && qstZebumperIngMCM.bWorkForType5 >= 1
+				if eval qstZebumperIngMCM.bWorkForType5 == 2 && player.getSitting != 3
+					set bNope to 1
+				endif
+			elseif eval iType == 6 && qstZebumperIngMCM.bWorkForType6 >= 1
+				if eval qstZebumperIngMCM.bWorkForType6 == 2 && player.getSitting != 3
+					set bNope to 1
+				endif
+			elseif eval iType == 7 && qstZebumperIngMCM.bWorkForType7 >= 1
+				if eval qstZebumperIngMCM.bWorkForType7 == 2 && player.getSitting != 3
+					set bNope to 1
+				endif
+			elseif eval iType == 8 && qstZebumperIngMCM.bWorkForType8 >= 1
+				if eval qstZebumperIngMCM.bWorkForType8 == 2 && player.getSitting != 3
+					set bNope to 1
+				endif
+;			elseif eval iType == 9 && qstZebumperIngMCM.bWorkForType9 >= 1
+;				if eval qstZebumperIngMCM.bWorkForType9 == 2 && player.getSitting != 3
+;					set bNope to 1
+;				endif
+;			elseif eval iType == 10 && qstZebumperIngMCM.bWorkForType10 >= 1
+;				if eval qstZebumperIngMCM.bWorkForType10 == 2 && player.getSitting != 3
+;					set bNope to 1
+;				endif
+			elseif eval iType == 11 && qstZebumperIngMCM.bWorkForType11 >= 1
+			elseif eval iType == 12 && qstZebumperIngMCM.bWorkForType12 >= 1
+			elseif eval iType == 13 && qstZebumperIngMCM.bWorkForType13 >= 1
+			elseif eval iType == 14 && qstZebumperIngMCM.bWorkForType14 >= 1
+			elseif eval iType == 15 && qstZebumperIngMCM.bWorkForType15 >= 1
+			elseif eval iType == 16 && qstZebumperIngMCM.bWorkForType16 >= 1
+			elseif eval iType == 17 && qstZebumperIngMCM.bWorkForType17 >= 1
+			elseif eval iType == 18 && qstZebumperIngMCM.bWorkForType18 >= 1
+			elseif eval iType == 19 && qstZebumperIngMCM.bWorkForType19 >= 1
+			elseif eval iType == 20 && qstZebumperIngMCM.bWorkForType20 >= 1
+			elseif eval iType == 21 && qstZebumperIngMCM.bWorkForType21 >= 1
+			elseif eval iType == 22 && qstZebumperIngMCM.bWorkForType22 >= 1
+;			elseif eval iType == 23 && qstZebumperIngMCM.bWorkForType23 >= 1
+;			elseif eval iType == 24 && qstZebumperIngMCM.bWorkForType24 >= 1
+			elseif eval iType == 25 && qstZebumperIngMCM.bWorkForType25 >= 1
+			elseif eval iType == 26 && qstZebumperIngMCM.bWorkForType26 >= 1
+			elseif eval iType == 27 && qstZebumperIngMCM.bWorkForType27 >= 1
+			else
+				set bNope to 1
+			endif
+		endif
+
+		printD "NOPE 2"
+		; ///// camera et combat
+		if bNope == 0
+			if iType < 11 ; && iForcePOVBuild == 0	; <- food and drinks 
+				if eval isPC1stPerson == 1 && qstZebumperIngMCM.bWork1POV == 0	; <- don't work in 1st POV
+					set bNope to 1
+				elseif eval isPC1stPerson == 0 && qstZebumperIngMCM.bWork3POV == 0	; <- don't work in 3rd POV
+					set bNope to 1
+				elseif eval player.isInCombat == 1 && qstZebumperIngMCM.bWorkCombat == 0	; <- don't work in combat
+					set bNope to 1
+				endif
+			elseif eval iType >= 11 && iType < 25 ; && iForcePOVBuild == 0	; <- chems 
+				if eval isPC1stPerson == 1 && qstZebumperIngMCM.bWork1POVChems == 0	; <- don't work in 1st POV
+					set bNope to 1
+				elseif eval isPC1stPerson == 0 && qstZebumperIngMCM.bWork3POVChems == 0	; <- don't work in 3rd POV
+					set bNope to 1
+				elseif eval player.isInCombat == 1 && qstZebumperIngMCM.bWorkCombatChems == 0	; <- don't work in combat
+					set bNope to 1
+				elseif eval iType == 11 || iType == 14 || iType == 19 || iType == 20	; <- don't work in PA
+					if qstZebumperIngMCM.bPAAutoInject == 1
+						set rArmor to player.getEqObj 2
+						if eval isPA rArmor || getArmorAudioTemplate rArmor == ArmorPowerAudioTemplate
+							printD "auto injection"
+							set bNope to 1
+						endif
+					endif
+				endif
+			elseif iType >= 25 ; && iForcePOVBuild == 0	; <- miscs
+				if eval isPC1stPerson == 1 && qstZebumperIngMCM.bWork1POVMiscs == 0	; <- don't work in 1st POV
+					set bNope to 1
+				elseif eval isPC1stPerson == 0 && qstZebumperIngMCM.bWork3POVMiscs == 0	; <- don't work in 3rd POV
+					set bNope to 1
+				elseif eval player.isInCombat == 1 && qstZebumperIngMCM.bWorkCombatMiscs == 0	; <- don't work in combat
+					set bNope to 1
+				endif
+			endif
+
+		endif
+
+		; ///// annulation
+		if bNope == 1	; <- animation impossible
+			listRemoveNth listZebumperIngAnimationRow 0
+			set fStep to 0
+			printD "NOPE !!! Annulé"
+			if eval bTurboUsed == 1 && rWhatIsTurbo == rEated
+				player.CIOS rEated
+				set bTurboUsed to 0
+			endif
+			RETURN
+		endif
+
+		set fStep to 1.5
+;	endif
+
+	; ======================================
+	; 		STEP 1.5
+	; ======================================
+	elseif fStep == 1.5
+		if eval player.isIdlePlaying == 0 || iPosition != 0
+			printD "step 1.5"
+
+			; ///// forced POV
+			if iType <= 10
+				set iWhatForcedPOV to qstZebumperIngMCM.iForcePOV
+			elseif eval iType >= 11 && iType < 25
+				set iWhatForcedPOV to qstZebumperIngMCM.iForcePOVChems
+			else
+				set iWhatForcedPOV to qstZebumperIngMCM.iForcePOVMiscs
+			endif
+
+			if iForcePOVBuild == 1
+				set iWhatForcedPOV to 1
+			elseif iForcePOVBuild == 3
+				set iWhatForcedPOV to 2
+			endif
+
+			if bDoOncePOVWeap == 0
+				if isPC1stPerson == 1
+					set bBasePOV to 1
+					if eval iWhatForcedPOV == 3 && player.getSitting == 3
+						toggleFirstPerson 0
+						scriptWait 30
+					elseif iWhatForcedPOV == 2
+						toggleFirstPerson 0
+						scriptWait 30
+					endif
+				else
+					set bBasePOV to 3
+					if iWhatForcedPOV == 1
+						toggleFirstPerson 1
+						scriptWait 30
+					endif
+				endif
+
+				; ///// no activate nothing sound for Asterra
+				let sSoundPath := getSoundSourceFile UIActivateNothing
+				setSoundSourceFile UIActivateNothing "fx\xxx_placeholder_silence.wav"
+
+				; ///// hide crosshair
+				if qstZebumperIngMCM.bHideCrosshair == 1
+					set iCrosshairAlpha to getNumericIniSetting "fHudOpacity:Interface"
+					set iCrosshairAlpha to iCrosshairAlpha * 255
+					setUIFloat "HUDMainMenu\ReticleCenter\reticle_center\alpha" 0
+					setUIFloat "HUDMainMenu\ReticleCenter\reticle_center_clone\alpha" 0
+				endif
+
+			endif
+
+			if isPC1stPerson == 1
+				set fStep to 2	; <- 1st POV
+			else
+				set fStep to 3	; <- 3rd POV
+			endif
+
+			set bAnimLaunched to 1
+
+		endif
+
+;	endif
+	; ======================================
+	; 		STEP 2
+	; ======================================
+	; ONLY HERE IF 1ST POV
+	elseif fStep == 2
+		printD "step 2"
+
+		; ///// crossmods : auto equip compatibility (should also work without this)
+		; ///// avoid auto equip to change equipment when using holstering weapon
+		if getINIFloat "ModList:bAutoEquip" "zebumper\zebumper's cross mods config.ini" == 1
+			setINIFloat "Function:bIsStopped" 1 "zebumper\AutoEquip.ini"
+		endif
+
+		if bDoOncePOVWeap == 0
+			set bWeaponWasOut to 0
+			if player.isWeaponOut
+				set bWeaponWasOut to 1
+			endif
+		endif
+
+		; disable control to prevent issues
+		disableControl 13				; <- disable POV
+		disableControl 7				; <- disable ready item to prevent reload animations
+		disableControl 14				; <- disable pipboy
+		if eval qstZebumperIngMCM.iCancelControlMCM == 1 && isControlDisabled 4 == 0
+			disableControl 4			; <- disable attack control if it's not the cancel one
+			set bActivateDisabled to 1	; <- used to know that this script disable the control (for activating it when menu mode)
+		endif
+
+		set fStep to 3
+
+;	endif
+
+	; ======================================
+	; 		STEP 3
+	; ======================================
+	; lancement de l'animation
+
+	elseif fStep == 3
+
+		; stop sound quest (and wait for it)
+		if getQuestRunning qstZebumperIngSounds
+			set qstZebumperIngSounds.bStopMe to 1
+			RETURN
+		endif
+
+		; ///// if player is already playing an animation when standing
+		if iPosition == 0
+			if player.isIdlePlaying
+				printD "return idle playing"
+				RETURN
+			endif
+
+			; ///// if player is already playing a weapon reload or weapon jam animation, wait
+			set bDoOncePOVWeap to playerRef.isAnimPlayingEx 4
+			set iValueMax to playerRef.isAnimPlayingEx 5
+			if eval bDoOncePOVWeap || iValueMax
+				RETURN
+				printD "return reloading or jam animation is playing"
+			endif
+		endif
+
+		set bDoOncePOVWeap to 1
+
+		; ///// 1st POV managment
+		if isPC1stPerson == 1
+			set iTimerGeneral to iTimer	; <- use 1st POV timer
+			printD "rengaine arme"
+			player.setWeaponOut 0
+			set fStep to 3.1
+
+			; !FASTER!
+			if bIsFaster == 1
+				set iTimerGeneral to iTimerGeneral / qstZebumperIngMCM.fFasterFactor
+				set iTimerObjShow to iTimerObjShow / qstZebumperIngMCM.fFasterFactor
+				set iTimerObjHide to iTimerObjHide / qstZebumperIngMCM.fFasterFactor
+				set iTimerObjShowAcc to iTimerObjShowAcc / qstZebumperIngMCM.fFasterFactor
+				set iTimerObjHideAcc to iTimerObjHideAcc / qstZebumperIngMCM.fFasterFactor
+			endif
+
+		else
+			set bWasLaunchedIn3 to 1
+			set iTimerGeneral to iTimer3rd	; <- use 3rd POV timer
+			set fStep to 3.3
+
+			; !FASTER!
+			if bIsFaster3rd == 1
+				set iTimerGeneral to iTimerGeneral / qstZebumperIngMCM.fFasterFactor
+			endif
+
+		endif
+
+	endif
+
+	if fStep == 3.1
+		if playerRef.isWeaponOut == 0
+			set fStep to 3.11
+			scriptWait 1
+		endif
+	endif
+
+	if fStep == 3.11
+
+		if iHand > 0
+			if iHand == 1
+				insertNode playerRef 3 "Bip01 R Hand|IngestibleObj"
+			elseif iHand == 2
+				insertNode playerRef 3 "Bip01 L Hand|IngestibleObj"
+			endif
+
+			if bUseDirect == 1
+				playerRef.setNifBlockTranslation "IngestibleObj" fTransX fTransY fTransZ 2
+				playerRef.setNifBlockRotation "IngestibleObj" fRotX fRotY fRotZ 0 2
+				playerRef.setNifBlockScale "IngestibleObj" fScale 2
+			endif
+
+			if qstZebumperIngMCM.bDisableAcc == 0
+				if iTimerObjShow > 0
+					playerRef.setNifBlockFlag "IngestibleObj" 0 1 2 ; HIDE
+					set fTimer to (( iTimerObjShow / 10 ) * getGlobalTimeMultiplier )
+					callAfterSeconds fTimer ({} => playerRef.setNifBlockFlag "IngestibleObj" 0 0 2) ; show
+				endif
+
+				if iTimerObjHide > 0
+					set fTimer to (( iTimerObjHide / 10 ) * getGlobalTimeMultiplier )
+					callAfterSeconds fTimer ({} => playerRef.setNifBlockFlag "IngestibleObj" 0 1 2) ; hide
+				endif
+			endif
+
+			attachModel playerRef 3 $sPathObj
+		endif
+
+		if eval iHandAcc > 0 && qstZebumperIngMCM.bDisableAcc == 0
+			if iHandAcc == 1
+				insertNode playerRef 3 "Bip01 R Hand|IngestibleAcc"
+			elseif iHandAcc == 2
+				insertNode playerRef 3 "Bip01 L Hand|IngestibleAcc"
+			endif
+			if iTimerObjShowAcc > 0
+				playerRef.setNifBlockFlag "IngestibleAcc" 0 1 2 ; HIDE
+				set fTimer to (( iTimerObjShowAcc / 10 ) * getGlobalTimeMultiplier )
+				callAfterSeconds fTimer ({} => playerRef.setNifBlockFlag "IngestibleAcc" 0 0 2) ; show
+			endif
+
+			if iTimerObjHideAcc > 0
+				set fTimer to (( iTimerObjHideAcc / 10 ) * getGlobalTimeMultiplier )
+				callAfterSeconds fTimer ({} => playerRef.setNifBlockFlag "IngestibleAcc" 0 1 2) ; hide
+			endif
+
+			attachModel playerRef 3 $sPathObjAcc
+		endif
+
+		set fStep to 3.3
+
+	endif
+
+	if fStep == 3.3
+
+		printD "step3 : timescale"
+		; ///// timescale function
+		if eval qstZebumperIngMCM.iTimeScaleVar > 0 && iPosition != 0 && iType < 11
+			set timescale to qstZebumperIngMCM.iTimeScaleVar	; <- modifies timescale
+		elseif timescale != qstZebumperIngMCM.iTimeScaleBase
+			set timescale to qstZebumperIngMCM.iTimeScaleBase	; <- restore timescale
+		endif
+
+		printD "step 3 : lauch CIOS"
+		set fStep to 4 ; <- place me before the CIOS please
+		set iValueMax to 0
+
+		player.CIOS aeZebumperIngPlayAnim
+		scriptWait 1
+
+	; ======================================
+	; 		STEP 4
+	; ======================================
+	; Animation
+
+	elseif fStep == 4
+
+		; trick for letting animation type 15 or 16 play the time wanted
+		if eval isPC1stPerson && bLongAnimTrick == 1 && iValueMax < 2
+			; manage book longer anim
+			if eval qstZebumperIngMCM.bLongAnimationsForBooks == 1 && iType > 25 && iType <= 27 && iValueMax == 0
+				set iTimerGeneral to ( iTimerGeneral * 2 )
+				set iValueMax to 1
+			endif
+			player.CIOS aeZebumperIngPlayAnim
+;			player.playIdleEx animZebumperIngGenericFirst
+		endif
+
+		; ///// play wild wasteland sound
+		if iWildWastelandSurprise == 1
+			playSound UIWildWasteland
+			showMessage WildWastelandMessage
+			set iWildWastelandSurprise to 0
+		endif
+
+		; ///// start anim quest (just one time)
+		if eval getQuestRunning qstZebumperIngWhenAnim == 0 && bDoOnceWhenAnim == 0
+			startQuest qstZebumperIngWhenAnim
+			set bDoOnceWhenAnim to 1
+		endif
+
+		; ///// start sound quest (just one time)
+		if eval qstZebumperIngMCM.iSounds > 0 && bDoOnceSound == 0 && getQuestRunning qstZebumperIngSounds == 0
+			if eval isPC1stPerson == 1 || qstZebumperIngMCM.iSounds == 1
+				startQuest qstZebumperIngSounds
+			endif
+			set bDoOnceSound to 1
+		endif
+
+		; ///// wait animation end (by timer or when idle is over)
+		if iTimerGeneral > 0
+
+			set fTimer to (( iTimerGeneral / 10 ) * getGlobalTimeMultiplier )
+			set iTimerGeneral to 0
+			callAfterSeconds fTimer (begin function {} ; Chorando se foi quem um dia so me fez chorar
+				if player.isIdlePlaying == 1
+					set iValueMax to 2
+					player.CIOS aeZebumperIngStopAnim
+					printD "stop anim after delay"
+				endif
+			end)
+
+		endif
+
+		if eval iValueMax == 2 || player.isIdlePlaying == 0 ; <- avoid RETURN if animation end or Timer end
+		else
+			RETURN	; <- animation is still playing and timer isn't finished
+		endif
+
+		printD "fin idle"
+
+		set bDoOnceWhenAnim to 0
+		set bDoOnceSound to 0
+
+		; ///// eating sit bonus
+		if eval iPosition != 0 && iType == 3 && qstZebumperIngMCM.bEatSitBonus == 1
+			player.CIOS aeZebumperIngEatSitBonus
+		endif
+
+		; removes current item
+		listRemoveNth listZebumperIngAnimationRow 0
+
+		; ///// just one animation for all
+		; ne devrait pas être utile puisque le OnAidItem fait déjà cette vérification
+		if qstZebumperIngMCM.iAnimRowUnique == 1
+			printD "une seule anim!"
+			listClear listZebumperIngAnimationRow	; <- end of the row, clear the list
+		endif
+
+		; ///// is next item exactly the same ? (start new animation faster)
+		if eval listGetNthForm listZebumperIngAnimationRow 0 == rEated && player.getFurnitureMarkerID == iPosition && bOnPause == 0 && iAnimRowOption == 0 ; && isPC1stPerson
+			printD "objet identique"
+			if isPC1stPerson == 0
+				scriptWait 80	; <- we have to (maybe 92)
+			else
+				scriptWait 10
+				; delete attached models and nodes
+				attachModel playerRef 2 $sPathObj
+				insertNode playerRef 2 "Bip01 R Hand|IngestibleObj"
+				insertNode playerRef 2 "Bip01 L Hand|IngestibleObj"
+
+				attachModel playerRef 2 $sPathObjAcc
+				insertNode playerRef 2 "Bip01 R Hand|IngestibleAcc"
+				insertNode playerRef 2 "Bip01 L Hand|IngestibleAcc"
+			endif
+
+			set fStep to 3
+			RETURN
+		endif
+
+		printD "========== END CURRENT INGESTIBLE =========="
+		set fStep to 5	; <- new item preparation
+
+	endif
+
+	; ======================================
+	; 		STEP 5
+	; ======================================
+	; préparation de l'animation suivante
+
+	if fStep == 5
+		printD "step 5"
+
+		; ///// fake turbo relaunch
+		if eval bTurboUsed == 1 && rWhatIsTurbo == rEated ; iType == 17
+			player.CIOS rEated
+			printD "CIOS Turbo effect"
+			set bTurboUsed to 0
+		endif
+
+		if eval isPC1stPerson || bWasLaunchedIn3 == 0
+			if iType >= 25
+				scriptWait 25
+			endif
+			attachModel playerRef 2 $sPathObj
+			insertNode playerRef 2 "Bip01 R Hand|IngestibleObj"
+			insertNode playerRef 2 "Bip01 L Hand|IngestibleObj"
+
+			attachModel playerRef 2 $sPathObjAcc
+			insertNode playerRef 2 "Bip01 R Hand|IngestibleAcc"
+			insertNode playerRef 2 "Bip01 L Hand|IngestibleAcc"
+		endif
+
+		; ///// is animation list empty ?
+		if listGetCount listZebumperIngAnimationRow > 0	; <- other items in list
+
+			; ///// wait animation full end
+			if isPC1stPerson == 0
+				scriptWait 50				
+			endif
+
+			; ///// exclure type joué
+			if iAnimRowOption == 1	; <-  exclure uniquement le type joué
+				let sString := "InGame:bTypeUsed" + $iType
+				setINIFloat $sString 1 "zebumper\AnimatedIngestiblesTechnical.ini"
+			elseif iAnimRowOption == 2	; <- exclure tous les type food ou chems
+				if iType < 11
+					set iValueMin to 0
+					set iValueMax to 10
+				elseif iType >= 11 && iType < 25
+					set iValueMin to 11
+					set iValueMax to 22
+				else
+					set iValueMin to 25
+					set iValueMax to 30
+				endif
+				while iValueMin <= iValueMax
+					let sString := "InGame:bTypeUsed" + $iValueMin
+					setINIFloat $sString 1 "zebumper\AnimatedIngestiblesTechnical.ini"
+					set iValueMin to iValueMin + 1
+				loop
+			endif
+
+			; ///// relaunch
+			set rEated to 0
+			set bWasLaunchedIn3 to 0
+			set iTimerGeneral to 0
+			set iTimer3rd to 0
+			set iTimer to 0
+			set iForcePOVBuild to 0
+			set iWildWastelandSurprise to 0
+			set iAnimRowOption to 0
+			set bIsFaster to 0
+
+			scriptWait 1
+			set fStep to 0
+
+		; ///// end list
+		else	; <- end of the list
+			set fStep to 6
+		endif
+
+	endif	; <- not an elseif
+
+	; ======================================
+	; 		STEP 6
+	; ======================================
+	; fin de la liste d'animations
+
+	if eval fStep == 6 && bOnPause == 0 ; <- la quête ne peut se terminer que lorsque les malus de pause on été appliqués
+	printD "step 6"
+
+		; ///// wait depending on POV
+		if isPC1stPerson == 0
+			scriptWait 10	; maybe less ?
+		endif
+		enableControl 13		; <- POV
+		enableControl 7			; <- ready item
+
+		; ///// reset anim
+		if bAnimLaunched == 1
+			player.CIOS aeZebumperIngPlayAnim
+		endif
+
+		; ///// reset timescale
+		if eval qstZebumperIngMCM.iTimeScaleVar > 0 && timescale != qstZebumperIngMCM.iTimeScaleBase
+			set timescale to qstZebumperIngMCM.iTimeScaleBase
+		endif
+
+		; ///// remove type used section
+		removeINISection "InGame" "zebumper\AnimatedIngestiblesTechnical.ini"
+
+		; ///// restore activate nothing sound
+		if bAnimLaunched == 1
+			setSoundSourceFile UIActivateNothing $sSoundPath
+		endif
+
+		; ///// show crosshair again if hidden
+		if iCrosshairAlpha != 0
+			setUIFloat "HUDMainMenu\ReticleCenter\reticle_center\alpha" iCrosshairAlpha
+			setUIFloat "HUDMainMenu\ReticleCenter\reticle_center_clone\alpha" iCrosshairAlpha
+		endif
+
+		; ///// vanilla turbo relaunch if not done before
+		if bTurboUsed == 1 ; iType == 17
+			player.CIOS NVTurbo
+			printD "CIOS Turbo effect step 6"
+			set bTurboUsed to 0
+		endif
+
+		; ///// END !!!
+		set bDoOnce to 0
+		set bAnimLaunched to 0
+		set rWhatIsTurbo to 0
+		printD "end quest"
+
+		if qstZebumperIngMCM.iCancelControlMCM == 1
+			enableControl 4
+			set bActivateDisabled to 0
+		endif
+
+		attachModel playerRef 2 $sPathObj
+		insertNode playerRef 2 "Bip01 R Hand|IngestibleObj"
+		insertNode playerRef 2 "Bip01 L Hand|IngestibleObj"
+
+		attachModel playerRef 2 $sPathObjAcc
+		insertNode playerRef 2 "Bip01 R Hand|IngestibleAcc"
+		insertNode playerRef 2 "Bip01 L Hand|IngestibleAcc"
+
+		; restore weapon and POV states
+		if isPC1stPerson
+			if bWeaponWasOut == 1
+				scriptWait 2
+				player.setWeaponOut 1
+			endif
+			if bBasePOV == 3
+				toggleFirstPerson 0
+			endif
+		elseif bBasePOV == 1
+			toggleFirstPerson 1
+		endif
+
+		if listGetCount listZebumperIngAnimationRow > 0
+			; in case an item is added to the list just at this moment
+			RETURN
+		endif
+
+		enableControl 14 ; <- pipboy
+
+		sv_destruct sString, sSoundPath, sPathObj, sPathObjAcc
+
+		; ///// crossmod : reenable auto equip mod
+		if getINIFloat "ModList:bAutoEquip" "zebumper\zebumper's cross mods config.ini" == 1
+			setINIFloat "Function:bIsStopped" 0 "zebumper\AutoEquip.ini"
+		endif
+
+		printD "========== END ALL INGESTIBLES =========="
+		stopQuest qstZebumperIngAnimationList
+
+	endif
+
+END 

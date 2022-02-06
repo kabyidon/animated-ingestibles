@@ -1,0 +1,137 @@
+scn scrZebumperIngSoundsQst
+
+short bCanPlay
+short bStopMe
+short bDoOnce
+
+float fTimerTarget
+float fTimer
+
+int iSound
+int iSoundDelay
+int iPrevSoundDelay
+int iArrayCount
+int iLoops
+
+
+array_var aINIValue
+
+string_var sSoundFile
+string_var sINIEntry
+string_var sINIValue
+
+BEGIN gameMode
+
+	; FIRST START QUEST
+	if bDoOnce == 0
+		set bDoOnce to 1
+		set bStopMe to 0
+		set fTimerTarget to 0
+		set fTimer to getSecondsPassed
+		set fTimer to 0
+		set iSoundDelay to 0
+		set bCanPlay to 0
+		set iPrevSoundDelay to 0
+		set iArrayCount to 0
+		set iLoops to -1
+
+		if isPC1stPerson
+			set iSound to qstZebumperIngAnimationList.iSoundFirst
+		else
+			set iSound to qstZebumperIngAnimationList.iSound
+		endif
+		printD "son choisi : " + $iSound
+
+		if iSound != 0
+			if qstZebumperIngAnimationList.bPlayLonger == 1
+				let sINIEntry := "Sounds:sSoundType_" + $iSound + "_Longer"
+			else
+				let sINIEntry := "Sounds:sSoundType_" + $iSound
+			endif
+			printD $sINIEntry
+
+			let sINIValue := getINIString $sINIEntry "zebumper\AnimatedIngestiblesPathsCustom.ini"
+			printD "valeur son custom : " + $sINIValue
+			let aINIValue := sv_split sINIValue "|"
+			set iArrayCount to ar_size aINIValue
+			printD "array size son custom : " + $iArrayCount
+
+			if eval iArrayCount % 2 == 0 && iArrayCount != 0
+				printD "son custom"
+				set bCanPlay to 1
+			else
+				let sINIValue := getINIString $sINIEntry "zebumper\AnimatedIngestiblesPaths.ini"
+				printD "valeur son : " + $sINIValue
+				let aINIValue := sv_split sINIValue "|"
+				set iArrayCount to ar_size aINIValue
+				printD "array size son : " + $iArrayCount
+
+				if eval iArrayCount % 2 == 0 && iArrayCount != 0
+					set bCanPlay to 1
+					printD "son mod"
+				else
+					set bStopMe to 1
+					printD "Sound don't have a valid configuration"
+				endif
+			endif
+		else
+			set bStopMe to 1
+		endif
+	endif
+
+	; STOP
+	if eval bStopMe == 1 || iLoops >= iArrayCount
+		sv_destruct sSoundFile, sINIEntry, sINIValue
+		let aINIValue := ar_null
+		set bStopMe to 0
+		set bDoOnce to 0
+		printD "stop sound quest"
+		stopQuest qstZebumperIngSounds
+		RETURN
+	endif
+
+	; set TIMER
+	if bCanPlay == 1
+
+		if iLoops == -1
+			set iLoops to 0
+		endif
+
+		let iSoundDelay := ( #aINIValue[iLoops] - iPrevSoundDelay )  ; so sounds timer are calc from zero, not from previous
+		set iLoops to iLoops + 1
+		let sSoundFile := $aINIValue[iLoops]
+		printD "sound file to play: " + $sSoundFile
+		printD "sound delay : " + $iSoundDelay
+
+		if eval isPC1stPerson && qstZebumperIngAnimationList.bIsFaster == 1
+			set iSoundDelay to iSoundDelay / qstZebumperIngMCM.fFasterFactor
+		elseif eval isPC1stPerson == 0 && qstZebumperIngAnimationList.bIsFaster3rd == 1
+			set iSoundDelay to iSoundDelay / qstZebumperIngMCM.fFasterFactor
+		endif
+
+		if iSoundDelay >= 0
+			set fTimerTarget to ( iSoundDelay / 10 )
+			printD "timer final : " + $fTimerTarget
+			setSoundSourceFile sndZebumperIngSound $sSoundFile
+		endif
+
+		set bCanPlay to 2
+	endif
+
+	; TIMER
+	if fTimer < fTimerTarget
+		set fTimer to fTimer + getSecondsPassed
+		RETURN
+	endif
+
+	; TIMER reach its target
+	if bCanPlay == 2
+		playSound sndZebumperIngSound
+		set iLoops to iLoops + 1
+		set iPrevSoundDelay to iSoundDelay
+		set fTimer to 0
+		set bCanPlay to 1
+		RETURN
+	endif
+
+END ;
