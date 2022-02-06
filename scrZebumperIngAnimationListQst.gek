@@ -1,6 +1,6 @@
 scn scrZebumperIngAnimationListQst
 
-; script de quête se lancant lorsqu'un objet est consommé
+; script de quï¿½te se lancant lorsqu'un objet est consommï¿½
 ; et tournant en boucle tant que la liste d'animation n'est pas vide.
 
 short bDoOnce
@@ -37,11 +37,19 @@ int iWildWastelandSurprise
 int iAnimRowOption
 int iDisabledFromPOV
 int iHand
+
 int iHandAcc
 int iTimerObjHide
 int iTimerObjHideAcc
 int iTimerObjShow
 int iTimerObjShowAcc
+
+int iHandAcc2
+int iTimerObjHide2
+int iTimerObjHideAcc2
+int iTimerObjShow2
+int iTimerObjShowAcc2
+
 int iValueMin
 int iValueMax
 
@@ -67,6 +75,7 @@ string_var sString
 string_var sSoundPath
 string_var sPathObj
 string_var sPathObjAcc
+string_var sPathObjAcc2
 
 BEGIN menuMode
 
@@ -120,6 +129,13 @@ BEGIN gameMode
 		set iTimerObjHideAcc to 0
 		set iTimerObjShow to 0
 		set iTimerObjShowAcc to 0
+
+		set iHandAcc2 to 0
+		set iTimerObjHide2 to 0
+		set iTimerObjHideAcc2 to 0
+		set iTimerObjShow2 to 0
+		set iTimerObjShowAcc2 to 0
+
 		set bDoOnceSound to 0
 		set bDoOnceWhenAnim to 0
 		set bPlayLonger to 0
@@ -229,8 +245,8 @@ BEGIN gameMode
 	; ======================================
 	; 		STEP 0
 	; ======================================
-	; cette étape permet de vérifier l'existence d'une animation
-	; appropriée à l'objet consommé.
+	; cette ï¿½tape permet de vï¿½rifier l'existence d'une animation
+	; appropriï¿½e ï¿½ l'objet consommï¿½.
 
 	if fStep == 0
 		printD "fStep 0"
@@ -396,7 +412,7 @@ BEGIN gameMode
 		if bNope == 1	; <- animation impossible
 			listRemoveNth listZebumperIngAnimationRow 0
 			set fStep to 0
-			printD "NOPE !!! Annulé"
+			printD "NOPE !!! Annulï¿½"
 			if eval bTurboUsed == 1 && rWhatIsTurbo == rEated
 				player.CIOS rEated
 				set bTurboUsed to 0
@@ -550,6 +566,11 @@ BEGIN gameMode
 				set iTimerObjHide to iTimerObjHide / qstZebumperIngMCM.fFasterFactor
 				set iTimerObjShowAcc to iTimerObjShowAcc / qstZebumperIngMCM.fFasterFactor
 				set iTimerObjHideAcc to iTimerObjHideAcc / qstZebumperIngMCM.fFasterFactor
+
+				set iTimerObjShow2 to iTimerObjShow2 / qstZebumperIngMCM.fFasterFactor
+				set iTimerObjHide2 to iTimerObjHide2 / qstZebumperIngMCM.fFasterFactor
+				set iTimerObjShowAcc2 to iTimerObjShowAcc2 / qstZebumperIngMCM.fFasterFactor
+				set iTimerObjHideAcc2 to iTimerObjHideAcc2 / qstZebumperIngMCM.fFasterFactor
 			endif
 
 		else
@@ -623,6 +644,27 @@ BEGIN gameMode
 
 			attachModel playerRef 3 $sPathObjAcc
 		endif
+
+		; ' Inserted code to handle the second accessory
+		; if eval iHandAcc2 > 0 && qstZebumperIngMCM.bDisableAcc == 0
+			; if iHandAcc2 == 1
+				; insertNode playerRef 3 "Bip01 R Hand|IngestibleAcc2"
+			; elseif iHandAcc2 == 2
+				; insertNode playerRef 3 "Bip01 L Hand|IngestibleAcc2"
+			; endif
+			; if iTimerObjShowAcc2 > 0
+				; playerRef.setNifBlockFlag "IngestibleAcc2" 0 1 2 ; HIDE
+				; set fTimer to (( iTimerObjShowAcc2 / 10 ) * getGlobalTimeMultiplier )
+				; callAfterSeconds fTimer ({} => playerRef.setNifBlockFlag "IngestibleAcc2" 0 0 2) ; show
+			; endif
+
+			; if iTimerObjHideAcc2 > 0
+				; set fTimer to (( iTimerObjHideAcc2 / 10 ) * getGlobalTimeMultiplier )
+				; callAfterSeconds fTimer ({} => playerRef.setNifBlockFlag "IngestibleAcc2" 0 1 2) ; hide
+			; endif
+
+			; attachModel playerRef 3 $sPathObjAcc2
+		; endif
 
 		set fStep to 3.3
 
@@ -718,7 +760,7 @@ BEGIN gameMode
 		listRemoveNth listZebumperIngAnimationRow 0
 
 		; ///// just one animation for all
-		; ne devrait pas être utile puisque le OnAidItem fait déjà cette vérification
+		; ne devrait pas ï¿½tre utile puisque le OnAidItem fait dï¿½jï¿½ cette vï¿½rification
 		if qstZebumperIngMCM.iAnimRowUnique == 1
 			printD "une seule anim!"
 			listClear listZebumperIngAnimationRow	; <- end of the row, clear the list
@@ -739,6 +781,10 @@ BEGIN gameMode
 				attachModel playerRef 2 $sPathObjAcc
 				insertNode playerRef 2 "Bip01 R Hand|IngestibleAcc"
 				insertNode playerRef 2 "Bip01 L Hand|IngestibleAcc"
+
+				attachModel playerRef 2 $sPathObjAcc2
+				insertNode playerRef 2 "Bip01 R Hand|IngestibleAcc2"
+				insertNode playerRef 2 "Bip01 L Hand|IngestibleAcc2"
 			endif
 
 			set fStep to 3
@@ -753,7 +799,7 @@ BEGIN gameMode
 	; ======================================
 	; 		STEP 5
 	; ======================================
-	; préparation de l'animation suivante
+	; prï¿½paration de l'animation suivante
 
 	if fStep == 5
 		printD "step 5"
@@ -776,6 +822,10 @@ BEGIN gameMode
 			attachModel playerRef 2 $sPathObjAcc
 			insertNode playerRef 2 "Bip01 R Hand|IngestibleAcc"
 			insertNode playerRef 2 "Bip01 L Hand|IngestibleAcc"
+			
+			attachModel playerRef 2 $sPathObjAcc2
+			insertNode playerRef 2 "Bip01 R Hand|IngestibleAcc2"
+			insertNode playerRef 2 "Bip01 L Hand|IngestibleAcc2"
 		endif
 
 		; ///// is animation list empty ?
@@ -786,8 +836,8 @@ BEGIN gameMode
 				scriptWait 50				
 			endif
 
-			; ///// exclure type joué
-			if iAnimRowOption == 1	; <-  exclure uniquement le type joué
+			; ///// exclure type jouï¿½
+			if iAnimRowOption == 1	; <-  exclure uniquement le type jouï¿½
 				let sString := "InGame:bTypeUsed" + $iType
 				setINIFloat $sString 1 "zebumper\AnimatedIngestiblesTechnical.ini"
 			elseif iAnimRowOption == 2	; <- exclure tous les type food ou chems
@@ -834,7 +884,7 @@ BEGIN gameMode
 	; ======================================
 	; fin de la liste d'animations
 
-	if eval fStep == 6 && bOnPause == 0 ; <- la quête ne peut se terminer que lorsque les malus de pause on été appliqués
+	if eval fStep == 6 && bOnPause == 0 ; <- la quï¿½te ne peut se terminer que lorsque les malus de pause on ï¿½tï¿½ appliquï¿½s
 	printD "step 6"
 
 		; ///// wait depending on POV
@@ -894,6 +944,10 @@ BEGIN gameMode
 		insertNode playerRef 2 "Bip01 R Hand|IngestibleAcc"
 		insertNode playerRef 2 "Bip01 L Hand|IngestibleAcc"
 
+		attachModel playerRef 2 $sPathObjAcc2
+		insertNode playerRef 2 "Bip01 R Hand|IngestibleAcc2"
+		insertNode playerRef 2 "Bip01 L Hand|IngestibleAcc2"
+
 		; restore weapon and POV states
 		if isPC1stPerson
 			if bWeaponWasOut == 1
@@ -914,7 +968,7 @@ BEGIN gameMode
 
 		enableControl 14 ; <- pipboy
 
-		sv_destruct sString, sSoundPath, sPathObj, sPathObjAcc
+		sv_destruct sString, sSoundPath, sPathObj, sPathObjAcc, sPathObjAcc2
 
 		; ///// crossmod : reenable auto equip mod
 		if getINIFloat "ModList:bAutoEquip" "zebumper\zebumper's cross mods config.ini" == 1

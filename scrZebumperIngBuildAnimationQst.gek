@@ -3,6 +3,7 @@ scn scrZebumperIngBuildAnimationQst
 int iAnimation
 int iAnimObject
 int iAccFirst
+int iAccFirst2
 int iAcc
 int iAnimationFirst
 int iAnimObjectFirst
@@ -13,11 +14,18 @@ int iTimer
 int iTimer3rd
 int iPosition
 int iHand
+
 int iHandAcc
 int iTimerObjHide
 int iTimerObjHideAcc
 int iTimerObjShow
 int iTimerObjShowAcc
+
+int iHandAcc2
+int iTimerObjHide2
+int iTimerObjHideAcc2
+int iTimerObjShow2
+int iTimerObjShowAcc2
 
 int iArrayCount
 int iStringLenght
@@ -50,6 +58,7 @@ string_var sINIKey
 string_var sPathAnim
 string_var sPathObj
 string_var sPathAcc
+string_var sPathAcc2
 
 BEGIN gameMode
 
@@ -79,7 +88,7 @@ BEGIN gameMode
 
 	if fStep == 0
 
-		; Ini spécifique a un mod
+		; Ini spï¿½cifique a un mod
 		set iHand to getSourceModIndex rEated
 		let sPluginName := getNthModName iHand
 
@@ -88,12 +97,14 @@ BEGIN gameMode
 		set iAnimObject to 0
 		set iAcc to 0
 		set iAccFirst to 0
+		set iAccFirst2 to 0
 		set iAnimationFirst to 0 
 		set iAnimObjectFirst to 0
 		set iTimer to 0
 		set iTimer3rd to 0
 		set iHand to 0
 		set iHandAcc to 0
+		set iHandAcc2 to 0
 		set iTimerObjHide to 0
 		set iTimerObjHideAcc to 0
 		set iTimerObjShow to 0
@@ -154,16 +165,16 @@ BEGIN gameMode
 
 		; FASTER
 		ref rFasterLambda := (BEGIN function {}
-			printD "vérifie le faster"
+			printD "vï¿½rifie le faster"
 			set bUseJohnny to 0 ; re-use this variable
 			if iType < 11	; food
 				if player.getAV Survival >= qstZebumperIngMCM.iFasterAndFurious
 					set bUseJohnny to 1
-					printD "faster activé : food"
+					printD "faster activï¿½ : food"
 				endif
 			elseif player.getAV Medicine >= qstZebumperIngMCM.iFasterAndFurious
 				set bUseJohnny to 1
-				printD "faster activé : chem"			
+				printD "faster activï¿½ : chem"			
 			endif
 		end)
 
@@ -172,7 +183,7 @@ BEGIN gameMode
 		; #########################
 		; IDENTIFICATION DE L'OBJET
 		; #########################
-		; /////// CHEMIN MODÈLE 3D ///////
+		; /////// CHEMIN MODï¿½LE 3D ///////
 		let sModelName := "%e"
 
 		; johnny guitar ID
@@ -189,7 +200,7 @@ BEGIN gameMode
 				printD "test plugin INI: " + $sINIValue
 				let aINIValue := sv_split sINIValue "|"
 				set iArrayCount to ar_size aINIValue
-				if eval iArrayCount == 21 || iArrayCount == 2
+				if eval iArrayCount == 21 || iArrayCount == 2 || iArrayCount == 22
 					let sModelNameConstruct := $sModelName
 					set bUseJohnny to 1				
 				endif
@@ -201,7 +212,7 @@ BEGIN gameMode
 					let sINIValue := getINIString $sINIStart "zebumper\AnimatedIngestiblesTechnicalCustom.ini"
 					let aINIValue := sv_split sINIValue "|"
 					set iArrayCount to ar_size aINIValue
-					if eval iArrayCount == 21 || iArrayCount == 2
+					if eval iArrayCount == 21 || iArrayCount == 2 || iArrayCount == 22
 						let sModelNameConstruct := $sModelName
 						set bUseJohnny to 1					
 					endif
@@ -211,7 +222,7 @@ BEGIN gameMode
 					let sINIValue := getINIstring $sINIStart "zebumper\AnimatedIngestiblesTechnical.ini"
 					let aINIValue := sv_split sINIValue "|"
 					set iArrayCount to ar_size aINIValue
-					if eval iArrayCount == 21 || iArrayCount == 2
+					if eval iArrayCount == 21 || iArrayCount == 2 || iArrayCount == 22
 						let sModelNameConstruct := $sModelName
 						set bUseJohnny to 1
 					endif
@@ -221,25 +232,25 @@ BEGIN gameMode
 		endif
 
 		if bUseJohnny == 0
-			let sModelName := getModelPath rEated			; =======> obtention du chemin du modèle 3D
-			let aModelName := sv_split sModelName "\"		; =======> séparation des éléments du chemin du modèle 3D (repérage des '\')
+			let sModelName := getModelPath rEated			; =======> obtention du chemin du modï¿½le 3D
+			let aModelName := sv_split sModelName "\"		; =======> sï¿½paration des ï¿½lï¿½ments du chemin du modï¿½le 3D (repï¿½rage des '\')
 
-			set iArrayCount to ar_size aModelName			; =======> total du nombre d'éléments dans la liste
-			set iArrayCount to iArrayCount - 1				; =======> gestion du zéro
+			set iArrayCount to ar_size aModelName			; =======> total du nombre d'ï¿½lï¿½ments dans la liste
+			set iArrayCount to iArrayCount - 1				; =======> gestion du zï¿½ro
 
 			printD $sModelName
 
-			; /////// NOM MODÈLE 3D ///////
+			; /////// NOM MODï¿½LE 3D ///////
 			let sModelNameConstruct := aModelName[iArrayCount]
 			let iStringLenght := sv_length sModelNameConstruct
-			set iStringLenght to iStringLenght - 4		; =======> retirer les 4 dernières lettres (le '.nif')
+			set iStringLenght to iStringLenght - 4		; =======> retirer les 4 derniï¿½res lettres (le '.nif')
 			sv_erase sModelNameConstruct iStringLenght
 		endif
 
 			printD $sModelNameConstruct
 			set fStep to 2
 
-			; à part pour la commande 'use'
+			; ï¿½ part pour la commande 'use'
 			let sINIStart := "Ingestibles:" + $sModelNameConstruct
 	
 	elseif fStep == 2
@@ -260,7 +271,7 @@ BEGIN gameMode
 			let aINIValue := sv_split sINIValue "|"
 			set iArrayCount to ar_size aINIValue
 			printD "array size : " + $iArrayCount
-			if eval iArrayCount == 21 || iArrayCount == 2
+			if eval iArrayCount == 21 || iArrayCount == 2 || iArrayCount == 22
 				set bUseJohnny to 1
 			endif
 		endif
@@ -273,7 +284,7 @@ BEGIN gameMode
 				let aINIValue := sv_split sINIValue "|"
 				set iArrayCount to ar_size aINIValue
 				printD "array size : " + $iArrayCount
-				if eval iArrayCount == 21 || iArrayCount == 2
+				if eval iArrayCount == 21 || iArrayCount == 2 || iArrayCount == 22
 					set bUseJohnny to 1
 				endif
 			endif
@@ -285,7 +296,7 @@ BEGIN gameMode
 				set iArrayCount to ar_size aINIValue
 				printD "use vanilla ini"
 				printD "array size : " + $iArrayCount
-				if eval iArrayCount != 21 && iArrayCount != 2
+				if eval iArrayCount != 21 && iArrayCount != 2 && iArrayCount != 22
 					set fStep to -1
 					RETURN
 				endif
@@ -311,7 +322,7 @@ BEGIN gameMode
 				set fStep to -1	; cancel everything
 				RETURN
 			endif
-			set iValue to rand 0 iArrayCount	; rand 0 100 donne 0 à 99
+			set iValue to rand 0 iArrayCount	; rand 0 100 donne 0 ï¿½ 99
 			printD "value random is " + $iValue
 			let sString := aINIValue[iValue]
 			printD "sString is now: " + $sString
@@ -325,7 +336,7 @@ BEGIN gameMode
 			if eval sv_find "#" sString >= 0
 				sv_erase sString 0 4
 				let iType := #sString
-				printD "iType changé pour type " + $iType
+				printD "iType changï¿½ pour type " + $iType
 			endif
 
 			; nouvelle construction
@@ -343,9 +354,9 @@ BEGIN gameMode
 			RETURN
 		endif
 
-		if iArrayCount == 21
+		if iArrayCount == 21 || iArrayCount == 22
 
-			printD "déja dans ini et config correcte + iType == " + $iType
+			printD "dï¿½ja dans ini et config correcte + iType == " + $iType
 
 			if iType == -1
 				sv_Erase sString 0 1
@@ -355,7 +366,7 @@ BEGIN gameMode
 			set iPosition to player.getFurnitureMarkerID
 			printD "furniture marker : " + $iPosition
 			if iPosition == 15	; tabouret
-				; test si tabouret devant machine à sous
+				; test si tabouret devant machine ï¿½ sous
 				if eval player.isCurrentFurnitureObj NVSlotMachineStoolList || player.isCurrentFurnitureObj NVSitStoolNoLeanList
 					set iPosition to 0
 					set iValue to 1
@@ -523,6 +534,14 @@ BEGIN gameMode
 				sv_Erase sString 0 1 
 				let iSoundFirst := #sString ; son 1ere personne
 				set iValue to iValue + 1
+
+				; ' another accessory for the cap
+				if iArrayCount == 22
+					let sString := aINIValue[21]
+					sv_Erase sString 0 1 
+					let iAccFirst2 := #sString ; second 1st person accessory
+				endif
+
 			endif
 
 			printD "type : " + $iType
@@ -535,9 +554,10 @@ BEGIN gameMode
 			printD "son 3eme : " + $iSound
 			printD "son 1ere : " + $iSoundFirst
 			printD "acc first : " + $iAccFirst
+			printD "acc first 2 : " + $iAccFirst2
 
 			printD "NOPE 3"
-			; ///// si une par type et type deja utilisé
+			; ///// si une par type et type deja utilisï¿½
 			if qstZebumperIngMCM.iAnimRowUnique == 0
 				if iType < 11
 					set qstZebumperIngAnimationList.iAnimRowOption to qstZebumperIngMCM.iAnimRowFood
@@ -549,13 +569,13 @@ BEGIN gameMode
 
 				if qstZebumperIngAnimationList.iAnimRowOption >= 1
 					let sString := "InGame:bTypeUsed" + $iType
-					printD "type a vérifier : " + $sString
+					printD "type a vï¿½rifier : " + $sString
 					if getINIFloat $sString "zebumper\AnimatedIngestiblesTechnical.ini" == 1	; <- type already use in the row
-						printD "type déjà utilisé : " + $iType
+						printD "type dï¿½jï¿½ utilisï¿½ : " + $iType
 						listRemoveNth listZebumperIngAnimationRow 0
 						set qstZebumperIngAnimationList.fStep to 0
 						set fStep to -2
-						printD "NOPE !!! Annulé"
+						printD "NOPE !!! Annulï¿½"
 						RETURN
 					endif
 				endif
@@ -582,14 +602,14 @@ BEGIN gameMode
 					set iAnimObject to 327 		; FoodHumanArm
 ;					if qstZebumperIngMCM.iWildHumanGore == 1 && qstZebumperIngMCM.iWildWastelandTweaks == 1
 						set qstZebumperIngAnimationList.iWildWastelandSurprise to 1
-;					elseif qstZebumperIngMCM.iWildHumanGore == 0	; découverte
+;					elseif qstZebumperIngMCM.iWildHumanGore == 0	; dï¿½couverte
 ;						set qstZebumperIngMCM.iWildHumanGore to 1
 ;					endif
 				elseif iAnimObject == 309 		; FoodHumanTable
 					set iAnimObject to 328 		; FoodGoreTable
 ;					if qstZebumperIngMCM.iWildHumanGore == 1 && qstZebumperIngMCM.iWildWastelandTweaks == 1
 						set qstZebumperIngAnimationList.iWildWastelandSurprise to 1
-;					elseif qstZebumperIngMCM.iWildHumanGore == 0	; découverte
+;					elseif qstZebumperIngMCM.iWildHumanGore == 0	; dï¿½couverte
 ;						set qstZebumperIngMCM.iWildHumanGore to 1
 ;					endif
 				endif
@@ -597,7 +617,7 @@ BEGIN gameMode
 					set iAnimObjectFirst to 327 ; FoodHumanArm
 ;					if qstZebumperIngMCM.iWildHumanGore == 1 && qstZebumperIngMCM.iWildWastelandTweaks == 1
 						set qstZebumperIngAnimationList.iWildWastelandSurprise to 1
-;					elseif qstZebumperIngMCM.iWildHumanGore == 0	; découverte
+;					elseif qstZebumperIngMCM.iWildHumanGore == 0	; dï¿½couverte
 ;						set qstZebumperIngMCM.iWildHumanGore to 1
 ;					endif
 				endif
@@ -651,7 +671,7 @@ BEGIN gameMode
 					endif
 					printD $sPath
 					if fileExists $sPath > 0
-						printD "fichier d'animation Faster! détecté"
+						printD "fichier d'animation Faster! dï¿½tectï¿½"
 						let sString := $sString + "!Faster!"
 						set qstZebumperIngAnimationList.bIsFaster3rd to 1
 					endif
@@ -687,7 +707,7 @@ BEGIN gameMode
 		if iValue >= 0
 			call rVariationLambda
 		endif
-		printD "inivalue après variation : " + $sINIValue
+		printD "inivalue aprï¿½s variation : " + $sINIValue
 
 		; GESTION LIVRE OUVERT (Type 25)
 		if eval iType == 25 && qstZebumperIngMCM.bWorkForType25 == 2
@@ -697,7 +717,7 @@ BEGIN gameMode
 				let sPath := $sINIValue + "Open.nif"
 			endif
 			if fileExists $sPath > 0
-				printD "fichier de livre ouvert animé trouvé"
+				printD "fichier de livre ouvert animï¿½ trouvï¿½"
 				let sINIValue := sINIValue + "Open"
 			endif
 		endif
@@ -726,19 +746,19 @@ BEGIN gameMode
 		; ====================================
 		let sPath := "meshes\" + sPathAnim
 		if fileExists $sPath == 0
-			printD "fichier d'animation non trouvé : " + $sPathAnim
+			printD "fichier d'animation non trouvï¿½ : " + $sPathAnim
 			let sPathAnim := "Characters\_Male\IdleAnims\zebumper\Ingestibles\DrinkingStandingA.kf"
 		endif
 
 		let sPath := "meshes\" + sPathObj
 		if fileExists $sPath == 0
-			printD "fichier d'objet animé non trouvé : " + $sPathObj
+			printD "fichier d'objet animï¿½ non trouvï¿½ : " + $sPathObj
 			let sPathObj := "zebumper\Ingestibles\3rdPOV\FoodGlass.nif"
 		endif
 
 		let sPath := "meshes\" + sPathAcc
 		if fileExists $sPath == 0
-			printD "fichier d'accessoire non trouvé : " + $sPathAcc
+			printD "fichier d'accessoire non trouvï¿½ : " + $sPathAcc
 			let sPathAcc := "zebumper\Ingestibles\3rdPOV\Acc\SporkTableAcc.nif"
 		endif
 
@@ -782,7 +802,7 @@ BEGIN gameMode
 					endif
 					printD $sPath
 					if fileExists $sPath > 0
-						printD "fichier d'animation Faster! détecté"
+						printD "fichier d'animation Faster! dï¿½tectï¿½"
 						let sString := $sString + "!Faster!"
 						set qstZebumperIngAnimationList.bIsFaster to 1
 					endif
@@ -820,7 +840,7 @@ BEGIN gameMode
 				if iValue >= 0
 					call rVariationLambda
 				endif
-				printD "inivalue après variation : " + $sINIValue
+				printD "inivalue aprï¿½s variation : " + $sINIValue
 
 				let aINIValue := sv_split sINIValue "|"
 				set iArrayCount to ar_size aINIValue
@@ -901,28 +921,76 @@ BEGIN gameMode
 				endif
 
 			endif
+			
+			; ' second first person accessory 
+			if iAccFirst2 > 0
+				let sINIKey := "AccessoriesFirst:iAccessory_" + $iAccFirst2
+
+				call rINICheckLambda
+
+				let aINIValue := sv_split sINIValue "|"
+				set iArrayCount to ar_size aINIValue
+
+				printD "acc 1st value TWO ini : " + $sINIValue
+				let sString := aINIValue[0]
+
+				printD "acc 1st TWO name : " + $sString
+				if bUseVanillaPath == 0
+					let sPathAcc2 := "zebumper\Ingestibles\1stPOV\acc\" + $sString + ".nif"
+				else
+					let sPathAcc2 := $sString + ".nif"
+				endif
+
+				if iArrayCount > 1
+					;acc model | R/L hand | Timer Show | Timer Hide
+					let sString := aINIValue[1]
+					if eval sString == "R"
+						set iHandAcc2 to 1	; acc model will be attached to right hand
+					else ; if eval sString == "L"
+						set iHandAcc2 to 2	; acc model will be attached to left hand
+					endif
+
+					if iArrayCount > 2
+						let sString := aINIValue[2]
+						let iTimerObjShowAcc2 := #sString
+
+						if iArrayCount > 3
+							let sString := aINIValue[3]
+							let iTimerObjHideAcc2 := #sString
+						endif
+
+					endif
+				endif
+
+			endif
 
 			; CONSTRUCTION ANIMATION 1ERE PERSONNE
 			let sPath := "meshes\" + sPathAnim
 			if fileExists $sPath == 0
-				printD "fichier d'animation 1ere personne non trouvé : " + $sPathAnim
+				printD "fichier d'animation 1ere personne non trouvï¿½ : " + $sPathAnim
 				let sPathAnim := "Characters\_Male\IdleAnims\zebumper\Ingestibles\Anim1stPOV\SpecialIdle_Whiskey.kf"
 			endif
 			let sPath := "meshes\" + sPathObj
 			if fileExists $sPath == 0
-				printD "fichier d'objet 1ere personne non trouvé : " + $sPathObj
+				printD "fichier d'objet 1ere personne non trouvï¿½ : " + $sPathObj
 				let sPathObj := "zebumper\Ingestibles\1stPOV\FoodWeaponWhiskey.nif"
 			endif
 			let sPath := "meshes\" + sPathAcc
 			if fileExists $sPath == 0
-				printD "fichier d'acc 1ere personne non trouvé : " + $sPathAcc
+				printD "fichier d'acc 1ere personne non trouvï¿½ : " + $sPathAcc
 				let sPathAcc := "zebumper\Ingestibles\1stPOV\acc\FoodWeaponWhiskey.nif"
+			endif
+			let sPath := "meshes\" + sPathAcc2
+			if fileExists $sPath == 0
+				printD "fichier d'acc 1ere personne non trouvï¿½ : " + $sPathAcc2
+				let sPathAcc2 := "zebumper\Ingestibles\1stPOV\acc\FoodWeaponWhiskey.nif"
 			endif
 
 			setIdleAnimPath animZebumperIngGenericFirst $sPathAnim
 
 			let sPathObj := "IngestibleObj|" + $sPathObj
 			let sPathAcc := "IngestibleAcc|" + $sPathAcc
+			let sPathAcc2 := "IngestibleAcc2|" + $sPathAcc2
 
 			set qstZebumperIngAnimationList.iHand to iHand
 			set qstZebumperIngAnimationList.iHandAcc to iHandAcc
@@ -930,10 +998,20 @@ BEGIN gameMode
 			set qstZebumperIngAnimationList.iTimerObjHideAcc to iTimerObjHideAcc
 			set qstZebumperIngAnimationList.iTimerObjShow to iTimerObjShow
 			set qstZebumperIngAnimationList.iTimerObjShowAcc to iTimerObjShowAcc
+			
+			set qstZebumperIngAnimationList.iHandAcc2 to iHandAcc2
+			set qstZebumperIngAnimationList.iTimerObjHide2 to iTimerObjHide2
+			set qstZebumperIngAnimationList.iTimerObjHideAcc2 to iTimerObjHideAcc2
+			set qstZebumperIngAnimationList.iTimerObjShow2 to iTimerObjShow2
+			set qstZebumperIngAnimationList.iTimerObjShowAcc2 to iTimerObjShowAcc2
+
 			let qstZebumperIngAnimationList.sPathObj := $sPathObj
 			let qstZebumperIngAnimationList.sPathObjAcc := $sPathAcc
+			let qstZebumperIngAnimationList.sPathObjAcc2 := $sPathAcc2
+
 
 		endif
+
 
 		set fStep to 5
 	
@@ -1001,7 +1079,7 @@ BEGIN gameMode
 			printD "chemin animation first : " + $sPath
 		endif
 
-		set qstZebumperIngAnimationList.fStep to 1	; débloque
+		set qstZebumperIngAnimationList.fStep to 1	; dï¿½bloque
 		set fStep to -2	; stop
 
 	endif
